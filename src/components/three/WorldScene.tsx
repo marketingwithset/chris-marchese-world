@@ -19,7 +19,7 @@ import CapitalRoom from './rooms/CapitalRoom'
 import InfrastructureRoom from './rooms/InfrastructureRoom'
 import GrowthRoom from './rooms/GrowthRoom'
 import NeonSign from './objects/NeonSign'
-import VideoScreen from './objects/VideoScreen'
+
 import ContentOverlay from '../ui/ContentOverlay'
 import DayNightToggle from '../ui/DayNightToggle'
 import RoomTransition from '../ui/RoomTransition'
@@ -155,23 +155,7 @@ export default function WorldScene() {
               <PortalInfrastructure onEnter={() => handleEnterRoom('infrastructure')} />
               <PortalGrowth onEnter={() => handleEnterRoom('growth')} />
 
-              {/* Film screens with Vimeo videos */}
-              <VideoScreen
-                position={[-18, 4, -5]}
-                rotation={[0, Math.PI / 2, 0]}
-                vimeoId="1174206252"
-                label="Reel 1"
-                width={5}
-                height={2.8}
-              />
-              <VideoScreen
-                position={[-18, 4, 2]}
-                rotation={[0, Math.PI / 2, 0]}
-                vimeoId="1173874678"
-                label="Reel 2"
-                width={5}
-                height={2.8}
-              />
+              {/* Film screens now integrated into FilmStudio zone */}
 
               {/* Environmental text */}
               <NeonSign
@@ -290,9 +274,9 @@ export default function WorldScene() {
           }}
         >
           {currentRoom === 'main' ? 'MARCHESE WORLD' :
-           currentRoom === 'capital' ? 'SET VENTURES · CAPITAL' :
-           currentRoom === 'infrastructure' ? 'SET · INFRASTRUCTURE' :
-           'SET MARKETING · GROWTH'}
+           currentRoom === 'capital' ? 'SET VENTURES \u00b7 CAPITAL' :
+           currentRoom === 'infrastructure' ? 'SET \u00b7 INFRASTRUCTURE' :
+           'SET MARKETING \u00b7 GROWTH'}
         </div>
       )}
 
@@ -301,8 +285,14 @@ export default function WorldScene() {
         onToggle={() => setLightingMode((m) => (m === 'day' ? 'night' : 'day'))}
       />
 
-      {/* Ambient audio toggle */}
-      {!isMobile && <AudioToggle />}
+      {/* Ambient audio toggle with zone-specific layers */}
+      {!isMobile && (
+        <AudioToggle
+          playerX={playerPos.x}
+          playerZ={playerPos.z}
+          currentRoom={currentRoom}
+        />
+      )}
 
       {/* Zone proximity indicator */}
       <ZoneProximity

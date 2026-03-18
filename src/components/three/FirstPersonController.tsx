@@ -21,6 +21,10 @@ interface FirstPersonControllerProps {
   onInteract: (contentId: string) => void
   isPointerLocked: boolean
   setPointerLocked: (locked: boolean) => void
+  /** Mobile joystick input: [dx, dy] normalized to [-1, 1] */
+  joystickInput?: React.RefObject<[number, number] | null>
+  /** Mobile gyroscope active */
+  isMobile?: boolean
 }
 
 // Spawn positions per room
@@ -45,6 +49,8 @@ export default function FirstPersonController({
   onInteract,
   isPointerLocked,
   setPointerLocked,
+  joystickInput,
+  isMobile = false,
 }: FirstPersonControllerProps) {
   const { camera, gl, scene } = useThree()
 
@@ -151,6 +157,57 @@ export default function FirstPersonController({
     }
   }, [enabled])
 
+  // Mobile gyroscope look controls
+  useEffect(() => {
+    if (!isMobile) return
+
+    let initialAlpha: number | null = null
+    let initialBeta: number | null = null
+
+    const onDeviceOrientation = (e: DeviceOrientationEvent) => {
+      if (e.alpha === null || e.beta === null) return
+
+      // Calibrate on first reading
+      if (initialAlpha === null) {
+        initialAlpha = e.alpha
+        initialBeta = e.beta
+      }
+
+      // Convert to delta from initial
+      let deltaAlpha = (e.alpha - initialAlpha) * Math.PI / 180
+      const deltaBeta = ((e.beta! - (initialBeta || 0)) * Math.PI / 180) * 0.5
+
+      // Wrap alpha around
+      if (deltaAlpha > Math.PI) deltaAlpha -= 2 * Math.PI
+      if (deltaAlpha < -Math.PI) deltaAlpha += 2 * Math.PI
+
+      yaw.current = Math.PI - deltaAlpha
+      pitch.current = Math.max(-1.4, Math.min(1.4, -deltaBeta))
+    }
+
+    // Request permission on iOS 13+
+    const requestPermission = async () => {
+      if (typeof (DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> }).requestPermission === 'function') {
+        try {
+          const perm = await (DeviceOrientationEvent as unknown as { requestPermission: () => Promise<string> }).requestPermission()
+          if (perm === 'granted') {
+            window.addEventListener('deviceorientation', onDeviceOrientation)
+          }
+        } catch {
+          console.warn('Gyroscope permission denied')
+        }
+      } else {
+        window.addEventListener('deviceorientation', onDeviceOrientation)
+      }
+    }
+
+    requestPermission()
+
+    return () => {
+      window.removeEventListener('deviceorientation', onDeviceOrientation)
+    }
+  }, [isMobile])
+
   // Main update loop
   useFrame((_, delta) => {
     if (!enabled) return
@@ -158,15 +215,27 @@ export default function FirstPersonController({
     const dt = Math.min(delta, 0.1) // Cap delta to prevent huge jumps
 
     // === MOVEMENT ===
-    if (isPointerLocked) {
+    const canMove = isPointerLocked || isMobile
+    if (canMove) {
       const forward = new THREE.Vector3(-Math.sin(yaw.current), 0, -Math.cos(yaw.current))
       const right = new THREE.Vector3(forward.z, 0, -forward.x)
 
       const dir = new THREE.Vector3(0, 0, 0)
+
+      // Desktop: WASD / Arrow keys
       if (keys.current.has('KeyW') || keys.current.has('ArrowUp')) dir.add(forward)
       if (keys.current.has('KeyS') || keys.current.has('ArrowDown')) dir.sub(forward)
       if (keys.current.has('KeyA') || keys.current.has('ArrowLeft')) dir.sub(right)
       if (keys.current.has('KeyD') || keys.current.has('ArrowRight')) dir.add(right)
+
+      // Mobile: virtual joystick input
+      if (isMobile && joystickInput?.current) {
+        const [jx, jy] = joystickInput.current
+        if (Math.abs(jx) > 0.1 || Math.abs(jy) > 0.1) {
+          dir.addScaledVector(right, jx)
+          dir.addScaledVector(forward, -jy) // -jy because forward is negative Z
+        }
+      }
 
       if (dir.lengthSq() > 0) {
         dir.normalize()

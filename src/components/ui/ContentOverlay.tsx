@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useRef } from 'react'
 import type { ContentItem } from '@/types'
 
 interface ContentOverlayProps {
@@ -143,53 +144,9 @@ export default function ContentOverlay({
             </div>
           )}
 
-          {/* Contact form placeholder */}
+          {/* Contact form */}
           {content.zoneId === 'telephone_booth' && (
-            <div className="space-y-4 mb-6">
-              <input
-                type="text"
-                placeholder="Your Name"
-                className="w-full px-4 py-3 text-sm"
-                style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(201, 168, 76, 0.2)',
-                  color: '#f0ead8',
-                  outline: 'none',
-                }}
-              />
-              <input
-                type="email"
-                placeholder="Email"
-                className="w-full px-4 py-3 text-sm"
-                style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(201, 168, 76, 0.2)',
-                  color: '#f0ead8',
-                  outline: 'none',
-                }}
-              />
-              <textarea
-                placeholder="Your Message"
-                rows={4}
-                className="w-full px-4 py-3 text-sm resize-none"
-                style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(201, 168, 76, 0.2)',
-                  color: '#f0ead8',
-                  outline: 'none',
-                }}
-              />
-              <button
-                className="w-full py-3 text-sm uppercase tracking-widest transition-opacity hover:opacity-80"
-                style={{
-                  fontFamily: 'var(--font-heading)',
-                  background: '#c0392b',
-                  color: '#f0ead8',
-                }}
-              >
-                Send Message
-              </button>
-            </div>
+            <ContactForm />
           )}
 
           {/* Other items in this zone */}
@@ -232,5 +189,105 @@ export default function ContentOverlay({
 
       </div>
     </>
+  )
+}
+
+function ContactForm() {
+  const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+  const formRef = useRef<HTMLFormElement>(null)
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const form = formRef.current
+    if (!form) return
+
+    const formData = new FormData(form)
+    const name = formData.get('name') as string
+    const email = formData.get('email') as string
+    const message = formData.get('message') as string
+
+    if (!name || !email || !message) return
+
+    setStatus('sending')
+
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, message }),
+      })
+
+      if (!res.ok) throw new Error('Failed')
+      setStatus('sent')
+      form.reset()
+    } catch {
+      setStatus('error')
+    }
+  }
+
+  if (status === 'sent') {
+    return (
+      <div className="py-8 text-center">
+        <p className="text-lg mb-2" style={{ color: '#c9a84c', fontFamily: 'var(--font-heading)' }}>
+          Message Sent
+        </p>
+        <p className="text-sm" style={{ color: '#a09880' }}>
+          Thank you — we&apos;ll be in touch soon.
+        </p>
+      </div>
+    )
+  }
+
+  const inputStyle = {
+    background: 'rgba(255,255,255,0.05)',
+    border: '1px solid rgba(201, 168, 76, 0.2)',
+    color: '#f0ead8',
+    outline: 'none',
+  }
+
+  return (
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-4 mb-6">
+      <input
+        name="name"
+        type="text"
+        placeholder="Your Name"
+        required
+        className="w-full px-4 py-3 text-sm"
+        style={inputStyle}
+      />
+      <input
+        name="email"
+        type="email"
+        placeholder="Email"
+        required
+        className="w-full px-4 py-3 text-sm"
+        style={inputStyle}
+      />
+      <textarea
+        name="message"
+        placeholder="Your Message"
+        rows={4}
+        required
+        className="w-full px-4 py-3 text-sm resize-none"
+        style={inputStyle}
+      />
+      {status === 'error' && (
+        <p className="text-xs" style={{ color: '#c0392b' }}>
+          Something went wrong. Please try again.
+        </p>
+      )}
+      <button
+        type="submit"
+        disabled={status === 'sending'}
+        className="w-full py-3 text-sm uppercase tracking-widest transition-opacity hover:opacity-80 disabled:opacity-50"
+        style={{
+          fontFamily: 'var(--font-heading)',
+          background: '#c0392b',
+          color: '#f0ead8',
+        }}
+      >
+        {status === 'sending' ? 'Sending...' : 'Send Message'}
+      </button>
+    </form>
   )
 }

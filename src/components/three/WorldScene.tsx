@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState, useCallback, useRef } from 'react'
+import { Suspense, useState, useCallback, useRef, useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { AdaptiveDpr, Preload, Environment } from '@react-three/drei'
 import Room from './Room'
@@ -24,6 +24,8 @@ import ContentOverlay from '../ui/ContentOverlay'
 import DayNightToggle from '../ui/DayNightToggle'
 import RoomTransition from '../ui/RoomTransition'
 import Crosshair from '../ui/Crosshair'
+import VirtualJoystick from '../ui/VirtualJoystick'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import type { RoomId, LightingMode } from '@/types'
 import { getContentById, getContentByZone } from '@/lib/content/sample-data'
 
@@ -33,6 +35,8 @@ export default function WorldScene() {
   const [currentRoom, setCurrentRoom] = useState<RoomId>('main')
   const [transitioning, setTransitioning] = useState(false)
   const [isPointerLocked, setPointerLocked] = useState(false)
+  const isMobile = useIsMobile()
+  const joystickInput = useRef<[number, number] | null>(null)
   const transitionTimeout = useRef<ReturnType<typeof setTimeout>>(null)
 
   const handleHotspotClick = useCallback((contentId: string) => {
@@ -85,6 +89,8 @@ export default function WorldScene() {
             onInteract={handleHotspotClick}
             isPointerLocked={isPointerLocked}
             setPointerLocked={setPointerLocked}
+            isMobile={isMobile}
+            joystickInput={joystickInput}
           />
 
           {/* HDRI Environment for realistic reflections */}
@@ -195,8 +201,8 @@ export default function WorldScene() {
         interactionPrompt={null}
       />
 
-      {/* Click to enter prompt */}
-      {!isPointerLocked && !activeContent && !transitioning && (
+      {/* Click/Tap to enter prompt */}
+      {!isPointerLocked && !activeContent && !transitioning && !isMobile && (
         <div className="fixed inset-0 z-10 flex items-center justify-center pointer-events-none">
           <div
             className="px-6 py-3 text-sm uppercase tracking-widest animate-pulse"
@@ -211,6 +217,14 @@ export default function WorldScene() {
             Click to Enter World
           </div>
         </div>
+      )}
+
+      {/* Mobile virtual joystick */}
+      {isMobile && controllerEnabled && (
+        <VirtualJoystick
+          onMove={(dx, dy) => { joystickInput.current = [dx, dy] }}
+          onEnd={() => { joystickInput.current = null }}
+        />
       )}
 
       {/* HTML overlay UI */}
@@ -236,9 +250,9 @@ export default function WorldScene() {
           }}
         >
           {currentRoom === 'main' ? 'MARCHESE WORLD' :
-           currentRoom === 'capital' ? 'SET VENTURES · CAPITAL' :
-           currentRoom === 'infrastructure' ? 'SET · INFRASTRUCTURE' :
-           'SET MARKETING · GROWTH'}
+           currentRoom === 'capital' ? 'SET VENTURES \u00b7 CAPITAL' :
+           currentRoom === 'infrastructure' ? 'SET \u00b7 INFRASTRUCTURE' :
+           'SET MARKETING \u00b7 GROWTH'}
         </div>
       )}
 

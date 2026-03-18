@@ -115,7 +115,7 @@ export default function Minimap({
 
     // Player position
     const dims = ROOM_DIMS[currentRoom] || ROOM_DIMS.main
-    // Map world coords to minimap: x [-w/2, w/2] -> [pad, pad+innerW]
+    // Map world coords to minimap: x [-w/2, w/2] → [pad, pad+innerW]
     const px = pad + ((playerX + dims.w / 2) / dims.w) * innerW
     const pz = pad + ((playerZ + dims.d / 2) / dims.d) * innerH
 

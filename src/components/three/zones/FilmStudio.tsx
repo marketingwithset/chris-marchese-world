@@ -25,11 +25,48 @@ export default function FilmStudio({ onHotspotClick }: FilmStudioProps) {
         color="#4a7fa5"
       />
       <NeonSign
-        text="PRODUCER · ACTOR"
+        text="PRODUCER \u00b7 ACTOR"
         position={[-5.9, 4.8, 0]}
         rotation={[0, Math.PI / 2, 0]}
         fontSize={0.18}
         color="#8a7233"
+      />
+
+      {/* === VIDEO WALL \u2014 stacked monitors on left wall === */}
+      {/* Main reel \u2014 large hero screen */}
+      <VideoScreen
+        position={[-5.8, 4.5, -2]}
+        rotation={[0, Math.PI / 2, 0]}
+        vimeoId="1174206252"
+        width={4}
+        height={2.2}
+        label="The Martini Shot"
+      />
+
+      {/* Secondary reels \u2014 smaller screens below */}
+      <VideoScreen
+        position={[-5.8, 2, -3.5]}
+        rotation={[0, Math.PI / 2, 0]}
+        vimeoId="1173874678"
+        width={2.2}
+        height={1.3}
+        label="This Mortal Coil"
+      />
+      <VideoScreen
+        position={[-5.8, 2, -0.5]}
+        rotation={[0, Math.PI / 2, 0]}
+        vimeoId="1173874041"
+        width={2.2}
+        height={1.3}
+        label="Behind the Lens"
+      />
+      <VideoScreen
+        position={[-5.8, 2, 2.5]}
+        rotation={[0, Math.PI / 2, 0]}
+        vimeoId="1173872281"
+        width={2.2}
+        height={1.3}
+        label="Director's Cut"
       />
 
       {/* Camera on tripod */}
@@ -79,38 +116,13 @@ export default function FilmStudio({ onHotspotClick }: FilmStudioProps) {
             <meshStandardMaterial color={0x333333} metalness={0.3} roughness={0.5} />
           </mesh>
         ))}
-      </group>
-
-      {/* Monitor with Vimeo video */}
-      <group position={[-2, 0, 1.5]}>
-        <mesh position={[0, 0.7, 0]}>
-          <cylinderGeometry args={[0.05, 0.15, 1.4, 8]} />
-          <meshStandardMaterial color={0x333333} metalness={0.3} roughness={0.5} />
-        </mesh>
-        <VideoScreen
-          position={[0, 1.6, 0]}
-          vimeoId="1174206252"
-          width={1.3}
-          height={0.8}
-          label="The Martini Shot"
-        />
         <Hotspot
-          position={[0, 2.3, 0]}
+          position={[0, 1.8, 0]}
           onClick={() => onHotspotClick('film-2')}
           color={0x4a7fa5}
           size={0.25}
         />
       </group>
-
-      {/* Second monitor — wall mounted */}
-      <VideoScreen
-        position={[-5.8, 4, 3]}
-        rotation={[0, Math.PI / 2, 0]}
-        vimeoId="1173874678"
-        width={3}
-        height={1.7}
-        label="This Mortal Coil"
-      />
 
       {/* Clapperboard on floor */}
       <group position={[1.5, 0.15, -1]}>
@@ -129,6 +141,18 @@ export default function FilmStudio({ onHotspotClick }: FilmStudioProps) {
           size={0.2}
         />
       </group>
+
+      {/* Film strip accent lights along ceiling */}
+      {[-4, -2, 0, 2, 4].map((z, i) => (
+        <pointLight
+          key={`film-light-${i}`}
+          position={[-4, 7.5, z]}
+          color={0x4a7fa5}
+          intensity={0.15}
+          distance={5}
+          decay={2}
+        />
+      ))}
 
       {/* Floor rug / area marker */}
       <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>

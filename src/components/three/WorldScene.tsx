@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState, useCallback, useRef, useMemo } from 'react'
+import { Suspense, useState, useCallback, useRef, useMemo, useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { AdaptiveDpr, Preload, Environment } from '@react-three/drei'
 import Room from './Room'
@@ -25,9 +25,28 @@ import DayNightToggle from '../ui/DayNightToggle'
 import RoomTransition from '../ui/RoomTransition'
 import Crosshair from '../ui/Crosshair'
 import VirtualJoystick from '../ui/VirtualJoystick'
+import AudioToggle from '../ui/AudioToggle'
+import Minimap from '../ui/Minimap'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import type { RoomId, LightingMode } from '@/types'
 import { getContentById, getContentByZone } from '@/lib/content/sample-data'
+import { useFrame, useThree } from '@react-three/fiber'
+import * as THREE from 'three'
+
+/** Reads camera position/rotation each frame and writes to shared refs */
+function PlayerTracker({ posRef, yawRef }: {
+  posRef: React.RefObject<{ x: number; z: number }>
+  yawRef: React.RefObject<number>
+}) {
+  const { camera } = useThree()
+  const euler = useMemo(() => new THREE.Euler(), [])
+  useFrame(() => {
+    posRef.current = { x: camera.position.x, z: camera.position.z }
+    euler.setFromQuaternion(camera.quaternion, 'YXZ')
+    yawRef.current = euler.y
+  })
+  return null
+}
 
 export default function WorldScene() {
   const [activeContent, setActiveContent] = useState<string | null>(null)
@@ -35,9 +54,22 @@ export default function WorldScene() {
   const [currentRoom, setCurrentRoom] = useState<RoomId>('main')
   const [transitioning, setTransitioning] = useState(false)
   const [isPointerLocked, setPointerLocked] = useState(false)
+  const [playerPos, setPlayerPos] = useState({ x: 0, z: 12 })
+  const [playerYaw, setPlayerYaw] = useState(Math.PI)
   const isMobile = useIsMobile()
   const joystickInput = useRef<[number, number] | null>(null)
   const transitionTimeout = useRef<ReturnType<typeof setTimeout>>(null)
+  const posRef = useRef({ x: 0, z: 12 })
+  const yawRef = useRef(Math.PI)
+
+  // Sync player position from Three.js to React state (throttled)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPlayerPos({ ...posRef.current })
+      setPlayerYaw(yawRef.current)
+    }, 100)
+    return () => clearInterval(interval)
+  }, [])
 
   const handleHotspotClick = useCallback((contentId: string) => {
     setActiveContent(contentId)
@@ -187,6 +219,9 @@ export default function WorldScene() {
             />
           )}
 
+          {/* Player position tracker for minimap */}
+          <PlayerTracker posRef={posRef} yawRef={yawRef} />
+
           <AdaptiveDpr pixelated />
           <Preload all />
         </Suspense>
@@ -250,15 +285,27 @@ export default function WorldScene() {
           }}
         >
           {currentRoom === 'main' ? 'MARCHESE WORLD' :
-           currentRoom === 'capital' ? 'SET VENTURES \u00b7 CAPITAL' :
-           currentRoom === 'infrastructure' ? 'SET \u00b7 INFRASTRUCTURE' :
-           'SET MARKETING \u00b7 GROWTH'}
+           currentRoom === 'capital' ? 'SET VENTURES · CAPITAL' :
+           currentRoom === 'infrastructure' ? 'SET · INFRASTRUCTURE' :
+           'SET MARKETING · GROWTH'}
         </div>
       )}
 
       <DayNightToggle
         mode={lightingMode}
         onToggle={() => setLightingMode((m) => (m === 'day' ? 'night' : 'day'))}
+      />
+
+      {/* Ambient audio toggle */}
+      {!isMobile && <AudioToggle />}
+
+      {/* Minimap */}
+      <Minimap
+        currentRoom={currentRoom}
+        playerX={playerPos.x}
+        playerZ={playerPos.z}
+        playerYaw={playerYaw}
+        visible={isPointerLocked && controllerEnabled}
       />
     </div>
   )

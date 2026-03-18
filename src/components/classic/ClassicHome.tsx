@@ -176,11 +176,70 @@ export default function ClassicHome() {
         )
       })}
 
+      {/* Contact Section */}
+      <section
+        className="px-6 py-16"
+        style={{ background: '#0a0a0a', borderTop: '1px solid rgba(201, 168, 76, 0.1)' }}
+      >
+        <div className="max-w-lg mx-auto text-center">
+          <h2
+            className="text-3xl mb-2 tracking-wider"
+            style={{ fontFamily: 'var(--font-heading)', color: '#c9a84c' }}
+          >
+            GET IN TOUCH
+          </h2>
+          <p className="text-sm mb-8" style={{ color: '#a09880' }}>
+            For collaborations, bookings, and inquiries
+          </p>
+
+          <div className="grid grid-cols-2 gap-4 mb-8 text-sm">
+            <div className="p-4" style={{ background: '#111111', border: '1px solid rgba(201, 168, 76, 0.1)' }}>
+              <p className="text-xs uppercase tracking-wider mb-1" style={{ color: '#a09880' }}>Email</p>
+              <p style={{ color: '#f0ead8' }}>chris@marketingbyset.com</p>
+            </div>
+            <div className="p-4" style={{ background: '#111111', border: '1px solid rgba(201, 168, 76, 0.1)' }}>
+              <p className="text-xs uppercase tracking-wider mb-1" style={{ color: '#a09880' }}>Location</p>
+              <p style={{ color: '#f0ead8' }}>Toronto / Miami</p>
+            </div>
+          </div>
+
+          {/* Social Links */}
+          <div className="flex justify-center gap-6">
+            {[
+              { label: 'Instagram', url: 'https://instagram.com/chrismarchese', handle: '@chrismarchese' },
+              { label: 'LinkedIn', url: 'https://linkedin.com/in/chrismarchese', handle: 'Chris Marchese' },
+              { label: 'Vimeo', url: 'https://vimeo.com/chrismarchese', handle: 'Reels' },
+            ].map((social) => (
+              <a
+                key={social.label}
+                href={social.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs uppercase tracking-wider transition-colors hover:opacity-80"
+                style={{ color: '#c9a84c', fontFamily: 'var(--font-heading)' }}
+              >
+                {social.label}
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="px-6 py-8 text-center" style={{ borderTop: '1px solid rgba(201, 168, 76, 0.1)' }}>
-        <p className="text-xs mb-2" style={{ color: '#a09880' }}>
-          SET Enterprises — Founded 2019 — Toronto / Miami
+        <p
+          className="text-lg tracking-wider mb-3"
+          style={{ fontFamily: 'var(--font-heading)', color: '#c9a84c' }}
+        >
+          SET ENTERPRISES
         </p>
+        <p className="text-xs mb-1" style={{ color: '#a09880' }}>
+          SET Ventures · SET Marketing · SET Infrastructure
+        </p>
+        <p className="text-xs mb-4" style={{ color: '#a09880' }}>
+          Founded 2019 — Toronto / Miami
+        </p>
+        <div className="w-8 h-px mx-auto mb-4" style={{ background: '#c9a84c' }} />
         <p className="text-xs" style={{ color: '#a09880' }}>
           &copy; {new Date().getFullYear()} Chris Marchese. Setting The Pace.
         </p>

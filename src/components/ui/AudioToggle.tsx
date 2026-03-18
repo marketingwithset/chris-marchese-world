@@ -145,7 +145,7 @@ export default function AudioToggle({ volume = 0.15 }: AudioToggleProps) {
       }}
       title={playing ? 'Mute Ambience' : 'Play Ambience'}
     >
-      {playing ? '♫' : '♪'}
+      {playing ? '\u266B' : '\u266A'}
     </button>
   )
 }

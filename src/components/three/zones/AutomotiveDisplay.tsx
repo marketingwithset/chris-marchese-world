@@ -2,10 +2,10 @@
 
 import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { RoundedBox } from '@react-three/drei'
 import * as THREE from 'three'
 import Hotspot from '../objects/Hotspot'
 import NeonSign from '../objects/NeonSign'
+import CarModel from '../objects/CarModel'
 import { ZONES } from '@/lib/scene/zones'
 import { useMaterial } from '@/lib/materials/useMaterial'
 
@@ -16,7 +16,6 @@ interface AutomotiveDisplayProps {
 export default function AutomotiveDisplay({ onHotspotClick }: AutomotiveDisplayProps) {
   const zone = ZONES.automotive
   const platformRef = useRef<THREE.Group>(null)
-  const carBodyMat = useMaterial('car_body')
   const goldMat = useMaterial('gold_brushed')
   const darkMetalMat = useMaterial('dark_metal')
 
@@ -31,70 +30,91 @@ export default function AutomotiveDisplay({ onHotspotClick }: AutomotiveDisplayP
       {/* Zone label */}
       <NeonSign text="AUTOMOTIVE" position={[0, 4, -4]} fontSize={0.5} color="#f0ead8" />
 
+      {/* Showroom spotlights — dramatic top-down and angled lights */}
+      <spotLight
+        position={[0, 7, 0]}
+        angle={0.5}
+        penumbra={0.8}
+        intensity={1.5}
+        color={0xfff8ee}
+        castShadow
+        target-position={[0, 0, 0]}
+        shadow-mapSize={[512, 512]}
+      />
+      <spotLight
+        position={[4, 5, 4]}
+        angle={0.4}
+        penumbra={0.6}
+        intensity={0.6}
+        color={0xddeeff}
+        target-position={[0, 0.5, 0]}
+      />
+      <spotLight
+        position={[-4, 5, -4]}
+        angle={0.4}
+        penumbra={0.6}
+        intensity={0.6}
+        color={0xffeedd}
+        target-position={[0, 0.5, 0]}
+      />
+
+      {/* Ground reflection plane (subtle mirror effect) */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]} receiveShadow>
+        <circleGeometry args={[5.5, 48]} />
+        <meshStandardMaterial
+          color={0x0a0a0a}
+          metalness={0.6}
+          roughness={0.3}
+        />
+      </mesh>
+
       {/* Rotating platform */}
       <group ref={platformRef}>
-        {/* Platform base */}
-        <mesh position={[0, 0.15, 0]}>
-          <cylinderGeometry args={[5, 5, 0.3, 48]} />
-          <primitive object={darkMetalMat} attach="material" />
+        {/* Platform base — sleek disc */}
+        <mesh position={[0, 0.08, 0]} receiveShadow>
+          <cylinderGeometry args={[5, 5.2, 0.16, 64]} />
+          <meshStandardMaterial color={0x0d0d0d} metalness={0.5} roughness={0.3} />
         </mesh>
 
-        {/* Platform edge ring */}
-        <mesh position={[0, 0.31, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[4.85, 5.05, 48]} />
-          <meshBasicMaterial color={0xc9a84c} transparent opacity={0.6} />
+        {/* Platform top surface (polished) */}
+        <mesh position={[0, 0.17, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[5, 64]} />
+          <meshStandardMaterial color={0x111111} metalness={0.7} roughness={0.15} />
         </mesh>
 
-        {/* Car body */}
-        <RoundedBox args={[3.5, 0.8, 1.6]} radius={0.15} position={[0, 0.8, 0]}>
-          <primitive object={carBodyMat} attach="material" />
-        </RoundedBox>
-
-        {/* Car cabin */}
-        <RoundedBox args={[1.8, 0.65, 1.4]} radius={0.12} position={[-0.2, 1.5, 0]}>
-          <meshStandardMaterial color={0x080808} metalness={0.7} roughness={0.2} />
-        </RoundedBox>
-
-        {/* Windshield */}
-        <mesh position={[0.7, 1.35, 0]} rotation={[0, 0, -0.4]}>
-          <planeGeometry args={[0.7, 1.3]} />
-          <meshStandardMaterial color={0x1a3050} metalness={0.9} roughness={0.1} transparent opacity={0.7} />
+        {/* Gold edge ring (flush with platform) */}
+        <mesh position={[0, 0.17, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[4.9, 5.02, 64]} />
+          <primitive object={goldMat} attach="material" />
         </mesh>
 
-        {/* Wheels */}
-        {[
-          [1.2, 0.35, 0.85], [1.2, 0.35, -0.85],
-          [-1.2, 0.35, 0.85], [-1.2, 0.35, -0.85],
-        ].map((pos, i) => (
-          <mesh key={i} position={pos as [number, number, number]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.3, 0.3, 0.15, 16]} />
-            <meshStandardMaterial color={0x1a1a1a} metalness={0.3} roughness={0.7} />
-          </mesh>
-        ))}
-
-        {/* Headlights */}
-        <mesh position={[1.8, 0.75, 0.5]}>
-          <sphereGeometry args={[0.1, 8, 8]} />
-          <meshBasicMaterial color={0xffffff} />
-        </mesh>
-        <mesh position={[1.8, 0.75, -0.5]}>
-          <sphereGeometry args={[0.1, 8, 8]} />
-          <meshBasicMaterial color={0xffffff} />
+        {/* Inner accent ring */}
+        <mesh position={[0, 0.171, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[3.8, 3.85, 64]} />
+          <meshStandardMaterial color={0xc9a84c} metalness={0.7} roughness={0.2} transparent opacity={0.3} />
         </mesh>
 
-        {/* Taillights */}
-        <mesh position={[-1.8, 0.75, 0.5]}>
-          <sphereGeometry args={[0.08, 8, 8]} />
-          <meshBasicMaterial color={0xcc0000} />
-        </mesh>
-        <mesh position={[-1.8, 0.75, -0.5]}>
-          <sphereGeometry args={[0.08, 8, 8]} />
-          <meshBasicMaterial color={0xcc0000} />
-        </mesh>
+        {/* Platform edge lights (subtle LED strip) */}
+        {Array.from({ length: 16 }).map((_, i) => {
+          const angle = (i / 16) * Math.PI * 2
+          return (
+            <pointLight
+              key={`plat-light-${i}`}
+              position={[Math.cos(angle) * 4.95, 0.05, Math.sin(angle) * 4.95]}
+              color={0xc9a84c}
+              intensity={0.05}
+              distance={1.5}
+              decay={2}
+            />
+          )
+        })}
 
-        {/* Hotspot */}
+        {/* === THE CAR === */}
+        <CarModel scale={1.6} />
+
+        {/* Hotspot (above car for interaction) */}
         <Hotspot
-          position={[0, 2.5, 0]}
+          position={[0, 3, 0]}
           onClick={() => onHotspotClick('auto-1')}
           color={0xf0ead8}
           size={0.35}

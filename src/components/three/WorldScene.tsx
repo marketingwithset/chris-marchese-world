@@ -21,7 +21,6 @@ import GrowthRoom from './rooms/GrowthRoom'
 import NeonSign from './objects/NeonSign'
 
 import ContentOverlay from '../ui/ContentOverlay'
-import DayNightToggle from '../ui/DayNightToggle'
 import RoomTransition from '../ui/RoomTransition'
 import Crosshair from '../ui/Crosshair'
 import VirtualJoystick from '../ui/VirtualJoystick'
@@ -51,7 +50,7 @@ function PlayerTracker({ posRef, yawRef }: {
 
 export default function WorldScene() {
   const [activeContent, setActiveContent] = useState<string | null>(null)
-  const [lightingMode, setLightingMode] = useState<LightingMode>('night')
+  const lightingMode: LightingMode = 'day'
   const [currentRoom, setCurrentRoom] = useState<RoomId>('main')
   const [transitioning, setTransitioning] = useState(false)
   const [isPointerLocked, setPointerLocked] = useState(false)
@@ -132,9 +131,9 @@ export default function WorldScene() {
 
           {/* HDRI Environment for realistic reflections */}
           <Environment
-            preset={lightingMode === 'day' ? 'studio' : 'night'}
+            preset="studio"
             background={false}
-            environmentIntensity={lightingMode === 'day' ? 0.4 : 0.25}
+            environmentIntensity={0.5}
           />
 
           {/* === MAIN ROOM === */}
@@ -154,8 +153,6 @@ export default function WorldScene() {
               <PortalCapital onEnter={() => handleEnterRoom('capital')} />
               <PortalInfrastructure onEnter={() => handleEnterRoom('infrastructure')} />
               <PortalGrowth onEnter={() => handleEnterRoom('growth')} />
-
-              {/* Film screens now integrated into FilmStudio zone */}
 
               {/* Environmental text */}
               <NeonSign
@@ -279,11 +276,6 @@ export default function WorldScene() {
            'SET MARKETING \u00b7 GROWTH'}
         </div>
       )}
-
-      <DayNightToggle
-        mode={lightingMode}
-        onToggle={() => setLightingMode((m) => (m === 'day' ? 'night' : 'day'))}
-      />
 
       {/* Ambient audio toggle with zone-specific layers */}
       {!isMobile && (

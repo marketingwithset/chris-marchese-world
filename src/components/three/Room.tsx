@@ -2,11 +2,11 @@
 
 import { useMemo } from 'react'
 import * as THREE from 'three'
-import { ROOM } from '@/lib/constants'
+import { ROOMS } from '@/lib/scene/rooms'
 import { useMaterial } from '@/lib/materials/useMaterial'
 
 export default function Room() {
-  const { width, depth, height } = ROOM
+  const { width, depth, height } = ROOMS.main
   const hw = width / 2
   const hd = depth / 2
 
@@ -16,58 +16,43 @@ export default function Room() {
   const goldMat = useMaterial('gold_brushed')
   const darkMetalMat = useMaterial('dark_metal')
 
-  // Ceiling recess geometry for light panels
-  const recessPositions = useMemo(() => {
+  // Pillar positions
+  const pillarPositions = useMemo(() => {
+    const pillars: { x: number; z: number }[] = []
+    for (let z = -hd + 5; z <= hd - 5; z += 8) {
+      pillars.push({ x: -hw + 0.25, z })
+      pillars.push({ x: hw - 0.25, z })
+    }
+    return pillars
+  }, [hw, hd])
+
+  // Ceiling light positions
+  const lightPositions = useMemo(() => {
     const positions: [number, number][] = []
-    for (let x = -hw + 5; x <= hw - 5; x += 10) {
-      for (let z = -hd + 5; z <= hd - 5; z += 10) {
+    for (let x = -hw + 5; x <= hw - 5; x += 8) {
+      for (let z = -hd + 5; z <= hd - 5; z += 8) {
         positions.push([x, z])
       }
     }
     return positions
   }, [hw, hd])
 
-  // Pillar positions along walls
-  const pillarPositions = useMemo(() => {
-    const pillars: { x: number; z: number; rotation: number }[] = []
-    // Left wall pillars
-    for (let z = -hd + 5; z <= hd - 5; z += 7) {
-      pillars.push({ x: -hw + 0.25, z, rotation: 0 })
-    }
-    // Right wall pillars
-    for (let z = -hd + 5; z <= hd - 5; z += 7) {
-      pillars.push({ x: hw - 0.25, z, rotation: 0 })
-    }
-    // Back wall pillars
-    for (let x = -hw + 6; x <= hw - 6; x += 8) {
-      pillars.push({ x, z: -hd + 0.25, rotation: Math.PI / 2 })
-    }
-    return pillars
-  }, [hw, hd])
-
   return (
     <group>
       {/* ===== FLOOR ===== */}
-      {/* Main floor */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
         <planeGeometry args={[width, depth]} />
         <primitive object={floorMat} attach="material" />
       </mesh>
 
-      {/* Floor border / inlay — gold trim around the perimeter */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, 0]}>
-        <ringGeometry args={[Math.min(hw, hd) - 2, Math.min(hw, hd) - 1.8, 4]} />
-        <meshStandardMaterial color={0x2a2218} metalness={0.4} roughness={0.6} />
+      {/* Floor center medallion */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.002, 0]}>
+        <ringGeometry args={[3, 3.15, 64]} />
+        <primitive object={goldMat} attach="material" />
       </mesh>
-
-      {/* Center floor medallion */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.006, 0]}>
-        <circleGeometry args={[3, 32]} />
-        <meshStandardMaterial color={0x1a1610} metalness={0.3} roughness={0.5} />
-      </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.007, 0]}>
-        <ringGeometry args={[2.8, 3, 32]} />
-        <meshStandardMaterial color={0xc9a84c} metalness={0.7} roughness={0.2} opacity={0.3} transparent />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.001, 0]}>
+        <circleGeometry args={[3, 64]} />
+        <meshStandardMaterial color={0x0a0a0a} metalness={0.3} roughness={0.5} />
       </mesh>
 
       {/* ===== CEILING ===== */}
@@ -77,30 +62,25 @@ export default function Room() {
       </mesh>
 
       {/* Ceiling recessed light panels */}
-      {recessPositions.map(([x, z], i) => (
-        <group key={`recess-${i}`} position={[x, height - 0.02, z]}>
-          {/* Light panel (slightly recessed, emissive) */}
+      {lightPositions.map(([x, z], i) => (
+        <group key={`light-${i}`} position={[x, height - 0.02, z]}>
+          {/* Light panel surface */}
           <mesh rotation={[Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[3, 3]} />
+            <planeGeometry args={[2.5, 2.5]} />
             <meshStandardMaterial
               color={0x111111}
               emissive={0xfff5e6}
-              emissiveIntensity={0.15}
+              emissiveIntensity={0.12}
               metalness={0.1}
               roughness={0.8}
             />
           </mesh>
-          {/* Rim around panel */}
-          <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.01]}>
-            <ringGeometry args={[1.4, 1.5, 4]} />
-            <meshStandardMaterial color={0x1a1a1a} metalness={0.3} roughness={0.5} />
-          </mesh>
-          {/* Actual light */}
+          {/* Actual point light */}
           <pointLight
             position={[0, -0.3, 0]}
             color={0xfff5e6}
-            intensity={0.4}
-            distance={8}
+            intensity={0.35}
+            distance={7}
             decay={2}
           />
         </group>
@@ -108,33 +88,32 @@ export default function Room() {
 
       {/* ===== WALLS ===== */}
 
-      {/* Back wall — main surface */}
+      {/* Back wall */}
       <mesh position={[0, height / 2, -hd]}>
         <planeGeometry args={[width, height]} />
         <primitive object={wallMat} attach="material" />
       </mesh>
-      {/* Back wall — wainscoting (lower panel) */}
+      {/* Back wall wainscoting */}
       <mesh position={[0, 1.5, -hd + 0.01]}>
         <planeGeometry args={[width, 3]} />
         <meshStandardMaterial color={0x151515} metalness={0.1} roughness={0.7} />
       </mesh>
-      {/* Back wall — chair rail (gold strip) */}
-      <mesh position={[0, 3, -hd + 0.02]}>
-        <boxGeometry args={[width, 0.06, 0.04]} />
+      {/* Gold chair rail */}
+      <mesh position={[0, 3.02, -hd + 0.02]}>
+        <boxGeometry args={[width, 0.04, 0.03]} />
         <primitive object={goldMat} attach="material" />
       </mesh>
 
-      {/* Front wall — left segment */}
+      {/* Front wall (gap for entrance) */}
       <mesh position={[-hw / 2 - 2.5, height / 2, hd]} rotation={[0, Math.PI, 0]}>
         <planeGeometry args={[hw - 5, height]} />
         <primitive object={wallMat} attach="material" />
       </mesh>
-      {/* Front wall — right segment */}
       <mesh position={[hw / 2 + 2.5, height / 2, hd]} rotation={[0, Math.PI, 0]}>
         <planeGeometry args={[hw - 5, height]} />
         <primitive object={wallMat} attach="material" />
       </mesh>
-      {/* Front wall — entrance arch top */}
+      {/* Entrance top */}
       <mesh position={[0, height - 1, hd]} rotation={[0, Math.PI, 0]}>
         <planeGeometry args={[10, 2]} />
         <primitive object={wallMat} attach="material" />
@@ -145,14 +124,14 @@ export default function Room() {
         <planeGeometry args={[depth, height]} />
         <primitive object={wallMat} attach="material" />
       </mesh>
-      {/* Left wall — wainscoting */}
+      {/* Left wall wainscoting */}
       <mesh position={[-hw + 0.01, 1.5, 0]} rotation={[0, Math.PI / 2, 0]}>
         <planeGeometry args={[depth, 3]} />
         <meshStandardMaterial color={0x151515} metalness={0.1} roughness={0.7} />
       </mesh>
-      {/* Left wall — chair rail */}
-      <mesh position={[-hw + 0.02, 3, 0]} rotation={[0, 0, 0]}>
-        <boxGeometry args={[0.04, 0.06, depth]} />
+      {/* Gold chair rail */}
+      <mesh position={[-hw + 0.02, 3.02, 0]}>
+        <boxGeometry args={[0.03, 0.04, depth]} />
         <primitive object={goldMat} attach="material" />
       </mesh>
 
@@ -161,140 +140,109 @@ export default function Room() {
         <planeGeometry args={[depth, height]} />
         <primitive object={wallMat} attach="material" />
       </mesh>
-      {/* Right wall — wainscoting */}
+      {/* Right wall wainscoting */}
       <mesh position={[hw - 0.01, 1.5, 0]} rotation={[0, -Math.PI / 2, 0]}>
         <planeGeometry args={[depth, 3]} />
         <meshStandardMaterial color={0x151515} metalness={0.1} roughness={0.7} />
       </mesh>
-      {/* Right wall — chair rail */}
-      <mesh position={[hw - 0.02, 3, 0]}>
-        <boxGeometry args={[0.04, 0.06, depth]} />
+      {/* Gold chair rail */}
+      <mesh position={[hw - 0.02, 3.02, 0]}>
+        <boxGeometry args={[0.03, 0.04, depth]} />
         <primitive object={goldMat} attach="material" />
       </mesh>
 
       {/* ===== BASEBOARDS ===== */}
-      {/* Back */}
       <mesh position={[0, 0.1, -hd + 0.05]}>
         <boxGeometry args={[width, 0.2, 0.1]} />
         <meshStandardMaterial color={0x111111} metalness={0.2} roughness={0.6} />
       </mesh>
-      {/* Left */}
       <mesh position={[-hw + 0.05, 0.1, 0]}>
         <boxGeometry args={[0.1, 0.2, depth]} />
         <meshStandardMaterial color={0x111111} metalness={0.2} roughness={0.6} />
       </mesh>
-      {/* Right */}
       <mesh position={[hw - 0.05, 0.1, 0]}>
         <boxGeometry args={[0.1, 0.2, depth]} />
         <meshStandardMaterial color={0x111111} metalness={0.2} roughness={0.6} />
       </mesh>
-      {/* Front left */}
-      <mesh position={[-hw / 2 - 2.5, 0.1, hd - 0.05]}>
-        <boxGeometry args={[hw - 5, 0.2, 0.1]} />
-        <meshStandardMaterial color={0x111111} metalness={0.2} roughness={0.6} />
-      </mesh>
-      {/* Front right */}
-      <mesh position={[hw / 2 + 2.5, 0.1, hd - 0.05]}>
-        <boxGeometry args={[hw - 5, 0.2, 0.1]} />
-        <meshStandardMaterial color={0x111111} metalness={0.2} roughness={0.6} />
-      </mesh>
 
       {/* ===== CROWN MOLDING ===== */}
-      {/* Back */}
       <mesh position={[0, height - 0.1, -hd + 0.05]}>
-        <boxGeometry args={[width, 0.15, 0.12]} />
+        <boxGeometry args={[width, 0.12, 0.1]} />
         <meshStandardMaterial color={0x1a1a1a} metalness={0.15} roughness={0.6} />
       </mesh>
-      {/* Left */}
       <mesh position={[-hw + 0.05, height - 0.1, 0]}>
-        <boxGeometry args={[0.12, 0.15, depth]} />
+        <boxGeometry args={[0.1, 0.12, depth]} />
         <meshStandardMaterial color={0x1a1a1a} metalness={0.15} roughness={0.6} />
       </mesh>
-      {/* Right */}
       <mesh position={[hw - 0.05, height - 0.1, 0]}>
-        <boxGeometry args={[0.12, 0.15, depth]} />
+        <boxGeometry args={[0.1, 0.12, depth]} />
         <meshStandardMaterial color={0x1a1a1a} metalness={0.15} roughness={0.6} />
       </mesh>
 
-      {/* ===== WALL PILLARS / COLUMNS ===== */}
+      {/* ===== WALL PILLARS WITH GOLD TRIM ===== */}
       {pillarPositions.map((p, i) => (
         <group key={`pillar-${i}`} position={[p.x, 0, p.z]}>
-          {/* Column shaft */}
+          {/* Pillar body */}
           <mesh position={[0, height / 2, 0]}>
-            <boxGeometry args={[0.5, height, 0.5]} />
-            <meshStandardMaterial color={0x161616} metalness={0.15} roughness={0.6} />
+            <boxGeometry args={[0.4, height, 0.4]} />
+            <primitive object={darkMetalMat} attach="material" />
           </mesh>
-          {/* Column base */}
-          <mesh position={[0, 0.15, 0]}>
-            <boxGeometry args={[0.7, 0.3, 0.7]} />
+          {/* Base cap */}
+          <mesh position={[0, 0.12, 0]}>
+            <boxGeometry args={[0.6, 0.24, 0.6]} />
             <meshStandardMaterial color={0x141414} metalness={0.2} roughness={0.5} />
           </mesh>
-          {/* Column capital (top) */}
-          <mesh position={[0, height - 0.15, 0]}>
-            <boxGeometry args={[0.7, 0.3, 0.7]} />
+          {/* Top cap */}
+          <mesh position={[0, height - 0.12, 0]}>
+            <boxGeometry args={[0.6, 0.24, 0.6]} />
             <meshStandardMaterial color={0x141414} metalness={0.2} roughness={0.5} />
           </mesh>
-          {/* Gold trim ring */}
-          <mesh position={[0, 0.35, 0]}>
-            <boxGeometry args={[0.55, 0.04, 0.55]} />
-            <meshStandardMaterial color={0xc9a84c} metalness={0.7} roughness={0.2} />
+          {/* Gold trim ring at mid-height */}
+          <mesh position={[0, 3, 0]}>
+            <boxGeometry args={[0.45, 0.05, 0.45]} />
+            <primitive object={goldMat} attach="material" />
           </mesh>
         </group>
       ))}
 
       {/* ===== ENTRANCE FRAME ===== */}
-      {/* Left entrance pillar */}
-      <mesh position={[-5, height / 2, hd - 0.1]}>
-        <boxGeometry args={[0.6, height, 0.6]} />
+      {/* Left column */}
+      <mesh position={[-5, height / 2, hd - 0.15]}>
+        <boxGeometry args={[0.3, height, 0.3]} />
         <primitive object={darkMetalMat} attach="material" />
       </mesh>
-      <mesh position={[-5, 0.2, hd - 0.1]}>
-        <boxGeometry args={[0.9, 0.4, 0.9]} />
-        <meshStandardMaterial color={0xc9a84c} metalness={0.6} roughness={0.25} />
-      </mesh>
-      {/* Right entrance pillar */}
-      <mesh position={[5, height / 2, hd - 0.1]}>
-        <boxGeometry args={[0.6, height, 0.6]} />
+      {/* Right column */}
+      <mesh position={[5, height / 2, hd - 0.15]}>
+        <boxGeometry args={[0.3, height, 0.3]} />
         <primitive object={darkMetalMat} attach="material" />
       </mesh>
-      <mesh position={[5, 0.2, hd - 0.1]}>
-        <boxGeometry args={[0.9, 0.4, 0.9]} />
-        <meshStandardMaterial color={0xc9a84c} metalness={0.6} roughness={0.25} />
-      </mesh>
-      {/* Entrance header beam */}
-      <mesh position={[0, height - 0.3, hd - 0.1]}>
-        <boxGeometry args={[10.6, 0.6, 0.6]} />
+      {/* Top beam */}
+      <mesh position={[0, height - 1, hd - 0.15]}>
+        <boxGeometry args={[10.3, 0.3, 0.3]} />
         <primitive object={darkMetalMat} attach="material" />
+      </mesh>
+      {/* Gold trim on entrance */}
+      <mesh position={[0, height - 0.85, hd - 0.05]}>
+        <boxGeometry args={[10.3, 0.03, 0.03]} />
+        <primitive object={goldMat} attach="material" />
       </mesh>
 
       {/* ===== FLOOR ACCENT LIGHTING ===== */}
-      {/* Uplight strips along walls (ambient glow) */}
-      {/* Left wall uplights */}
-      {Array.from({ length: 4 }, (_, i) => (
+      {/* Subtle up-lights along the back wall */}
+      {[-12, -6, 0, 6, 12].map((x, i) => (
         <pointLight
-          key={`left-up-${i}`}
-          position={[-hw + 0.5, 0.3, -hd + 5 + i * 7]}
+          key={`floor-up-${i}`}
+          position={[x, 0.15, -hd + 0.5]}
           color={0xc9a84c}
-          intensity={0.15}
-          distance={5}
-          decay={2}
-        />
-      ))}
-      {/* Right wall uplights */}
-      {Array.from({ length: 4 }, (_, i) => (
-        <pointLight
-          key={`right-up-${i}`}
-          position={[hw - 0.5, 0.3, -hd + 5 + i * 7]}
-          color={0xc9a84c}
-          intensity={0.15}
-          distance={5}
+          intensity={0.06}
+          distance={3}
           decay={2}
         />
       ))}
 
-      {/* ===== FLOOR GRID (subtle) ===== */}
+      {/* ===== FLOOR GRID ===== */}
       <gridHelper
-        args={[width, 40, 0x1a1a1a, 0x0d0d0d]}
+        args={[Math.max(width, depth), 40, 0x1a1a1a, 0x0d0d0d]}
         position={[0, 0.003, 0]}
       />
     </group>

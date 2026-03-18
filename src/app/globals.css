@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #060606;
+  --color-bg-card: #111111;
+  --color-bg-overlay: rgba(6, 6, 6, 0.92);
+  --color-gold: #c9a84c;
+  --color-gold-dim: #8a7233;
+  --color-text: #f0ead8;
+  --color-text-muted: #a09880;
+  --color-capital: #4a7fa5;
+  --color-infra: #c9a84c;
+  --color-growth: #5a9e6f;
+  --color-red: #c0392b;
+  --color-green: #27ae60;
+
+  --font-heading: "Bebas Neue", "Impact", sans-serif;
+  --font-body: "DM Sans", sans-serif;
+  --font-mono: "DM Mono", monospace;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: var(--color-gold);
+  color: var(--color-bg);
+}
+
+/* Scrollbar styling for overlay panels */
+.overlay-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.overlay-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.overlay-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-gold-dim);
+  border-radius: 2px;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}

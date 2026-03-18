@@ -25,6 +25,10 @@ interface FirstPersonControllerProps {
   joystickInput?: React.RefObject<[number, number] | null>
   /** Mobile gyroscope active */
   isMobile?: boolean
+  /** Ref to write current interact target for crosshair prompt */
+  interactTargetRef?: React.RefObject<string | null>
+  /** Ref to write current zone name for proximity indicator */
+  nearZoneRef?: React.RefObject<string | null>
 }
 
 // Spawn positions per room
@@ -41,6 +45,10 @@ const MOUSE_SENSITIVITY = 0.002
 const PLAYER_RADIUS = 0.35
 const INTERACT_DISTANCE = 4
 const PORTAL_COOLDOWN = 1500
+const HEAD_BOB_SPEED = 10
+const HEAD_BOB_AMOUNT = 0.035
+const SPRINT_BOB_AMOUNT = 0.055
+const EYE_HEIGHT = 1.6
 
 export default function FirstPersonController({
   currentRoom,
@@ -51,17 +59,27 @@ export default function FirstPersonController({
   setPointerLocked,
   joystickInput,
   isMobile = false,
+  interactTargetRef,
+  nearZoneRef,
 }: FirstPersonControllerProps) {
   const { camera, gl, scene } = useThree()
 
   // Player state (refs for per-frame performance)
   const yaw = useRef(Math.PI)
   const pitch = useRef(0)
-  const position = useRef(new THREE.Vector3(0, 1.6, 12))
+  const position = useRef(new THREE.Vector3(0, EYE_HEIGHT, 12))
   const keys = useRef<Set<string>>(new Set())
   const prevRoom = useRef<RoomId>(currentRoom)
   const portalCooldown = useRef(0)
   const interactTarget = useRef<string | null>(null)
+
+  // Head bob
+  const bobTime = useRef(0)
+  const isMoving = useRef(false)
+
+  // Footstep audio
+  const audioCtx = useRef<AudioContext | null>(null)
+  const lastStepTime = useRef(0)
 
   // Cached collision data
   const walls = useRef<WallDef[]>([])
@@ -70,6 +88,39 @@ export default function FirstPersonController({
   // Raycaster for interactions
   const raycaster = useRef(new THREE.Raycaster())
   const rayDir = useRef(new THREE.Vector3())
+
+  // Procedural footstep sound
+  const playFootstep = useCallback(() => {
+    if (!audioCtx.current) {
+      try { audioCtx.current = new AudioContext() } catch { return }
+    }
+    const ctx = audioCtx.current
+    if (ctx.state === 'suspended') ctx.resume()
+
+    const now = ctx.currentTime
+    // Short noise burst filtered to sound like a soft footstep
+    const bufferSize = ctx.sampleRate * 0.06
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
+    const data = buffer.getChannelData(0)
+    for (let i = 0; i < bufferSize; i++) {
+      const env = 1 - (i / bufferSize)
+      data[i] = (Math.random() * 2 - 1) * env * env
+    }
+    const source = ctx.createBufferSource()
+    source.buffer = buffer
+
+    const filter = ctx.createBiquadFilter()
+    filter.type = 'lowpass'
+    filter.frequency.value = 400 + Math.random() * 200
+
+    const gain = ctx.createGain()
+    gain.gain.value = 0.04 + Math.random() * 0.02
+
+    source.connect(filter)
+    filter.connect(gain)
+    gain.connect(ctx.destination)
+    source.start(now)
+  }, [])
 
   // Build collision walls for current room
   useEffect(() => {
@@ -239,8 +290,8 @@ export default function FirstPersonController({
 
       if (dir.lengthSq() > 0) {
         dir.normalize()
-        const speed = keys.current.has('ShiftLeft') || keys.current.has('ShiftRight')
-          ? SPRINT_SPEED : MOVE_SPEED
+        const sprinting = keys.current.has('ShiftLeft') || keys.current.has('ShiftRight')
+        const speed = sprinting ? SPRINT_SPEED : MOVE_SPEED
         const move = dir.multiplyScalar(speed * dt)
 
         const desiredX = position.current.x + move.x
@@ -253,6 +304,24 @@ export default function FirstPersonController({
 
         position.current.x = resolvedX
         position.current.z = resolvedZ
+        isMoving.current = true
+
+        // Head bob
+        bobTime.current += dt * HEAD_BOB_SPEED * (sprinting ? 1.4 : 1)
+        const bobAmount = sprinting ? SPRINT_BOB_AMOUNT : HEAD_BOB_AMOUNT
+        position.current.y = EYE_HEIGHT + Math.sin(bobTime.current) * bobAmount
+
+        // Footstep sounds (every ~0.4s walking, ~0.3s sprinting)
+        const stepInterval = sprinting ? 0.3 : 0.45
+        const now = performance.now() / 1000
+        if (now - lastStepTime.current > stepInterval) {
+          lastStepTime.current = now
+          playFootstep()
+        }
+      } else {
+        isMoving.current = false
+        // Smoothly return to eye height
+        position.current.y += (EYE_HEIGHT - position.current.y) * Math.min(1, dt * 8)
       }
     }
 
@@ -290,7 +359,19 @@ export default function FirstPersonController({
       }
     }
     interactTarget.current = foundTarget
+
+    // Write to shared refs for UI
+    if (interactTargetRef) {
+      interactTargetRef.current = foundTarget
+    }
   })
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      audioCtx.current?.close()
+    }
+  }, [])
 
   return null
 }

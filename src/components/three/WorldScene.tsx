@@ -27,6 +27,7 @@ import Crosshair from '../ui/Crosshair'
 import VirtualJoystick from '../ui/VirtualJoystick'
 import AudioToggle from '../ui/AudioToggle'
 import Minimap from '../ui/Minimap'
+import ZoneProximity from '../ui/ZoneProximity'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import type { RoomId, LightingMode } from '@/types'
 import { getContentById, getContentByZone } from '@/lib/content/sample-data'
@@ -61,12 +62,15 @@ export default function WorldScene() {
   const transitionTimeout = useRef<ReturnType<typeof setTimeout>>(null)
   const posRef = useRef({ x: 0, z: 12 })
   const yawRef = useRef(Math.PI)
+  const interactTargetRef = useRef<string | null>(null)
+  const [interactPrompt, setInteractPrompt] = useState<string | null>(null)
 
-  // Sync player position from Three.js to React state (throttled)
+  // Sync player position + interaction state from Three.js to React (throttled)
   useEffect(() => {
     const interval = setInterval(() => {
       setPlayerPos({ ...posRef.current })
       setPlayerYaw(yawRef.current)
+      setInteractPrompt(interactTargetRef.current ? 'Press E to interact' : null)
     }, 100)
     return () => clearInterval(interval)
   }, [])
@@ -123,6 +127,7 @@ export default function WorldScene() {
             setPointerLocked={setPointerLocked}
             isMobile={isMobile}
             joystickInput={joystickInput}
+            interactTargetRef={interactTargetRef}
           />
 
           {/* HDRI Environment for realistic reflections */}
@@ -233,7 +238,7 @@ export default function WorldScene() {
       {/* Crosshair + controls hint (visible when pointer locked) */}
       <Crosshair
         visible={isPointerLocked && controllerEnabled}
-        interactionPrompt={null}
+        interactionPrompt={interactPrompt}
       />
 
       {/* Click/Tap to enter prompt */}
@@ -298,6 +303,14 @@ export default function WorldScene() {
 
       {/* Ambient audio toggle */}
       {!isMobile && <AudioToggle />}
+
+      {/* Zone proximity indicator */}
+      <ZoneProximity
+        playerX={playerPos.x}
+        playerZ={playerPos.z}
+        currentRoom={currentRoom}
+        visible={isPointerLocked && controllerEnabled}
+      />
 
       {/* Minimap */}
       <Minimap

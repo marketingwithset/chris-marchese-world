@@ -134,7 +134,7 @@ export default function WorldScene() {
           <Environment
             preset={lightingMode === 'day' ? 'studio' : 'night'}
             background={false}
-            environmentIntensity={lightingMode === 'day' ? 0.4 : 0.15}
+            environmentIntensity={lightingMode === 'day' ? 0.4 : 0.25}
           />
 
           {/* === MAIN ROOM === */}
@@ -290,9 +290,9 @@ export default function WorldScene() {
           }}
         >
           {currentRoom === 'main' ? 'MARCHESE WORLD' :
-           currentRoom === 'capital' ? 'SET VENTURES \u00b7 CAPITAL' :
-           currentRoom === 'infrastructure' ? 'SET \u00b7 INFRASTRUCTURE' :
-           'SET MARKETING \u00b7 GROWTH'}
+           currentRoom === 'capital' ? 'SET VENTURES · CAPITAL' :
+           currentRoom === 'infrastructure' ? 'SET · INFRASTRUCTURE' :
+           'SET MARKETING · GROWTH'}
         </div>
       )}
 

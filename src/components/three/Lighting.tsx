@@ -23,12 +23,12 @@ export default function Lighting({ mode }: LightingProps) {
     const isDay = mode === 'day'
     const lerp = 0.05
 
-    // Day: bright gallery lighting. Night: moody with accent lights
-    const targetAmbient = isDay ? 0.6 : 0.25
-    const targetHemi = isDay ? 0.5 : 0.2
-    const targetDir = isDay ? 1.0 : 0.3
-    const targetFill = isDay ? 0.4 : 0.15
-    const targetNeon = isDay ? 0.5 : 2.5
+    // Day: bright gallery lighting. Night: dimmer mood lighting (still visible)
+    const targetAmbient = isDay ? 0.6 : 0.4
+    const targetHemi = isDay ? 0.5 : 0.35
+    const targetDir = isDay ? 1.0 : 0.5
+    const targetFill = isDay ? 0.4 : 0.25
+    const targetNeon = isDay ? 0.5 : 1.8
 
     if (ambientRef.current) {
       ambientRef.current.intensity += (targetAmbient - ambientRef.current.intensity) * lerp

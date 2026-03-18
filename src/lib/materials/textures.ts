@@ -1,6 +1,6 @@
 /**
  * Procedural texture factories using Canvas 2D API.
- * Each function generates a CanvasTexture \u2014 no image files needed.
+ * Each function generates a CanvasTexture — no image files needed.
  * Easy to swap: replace any factory with a loaded texture later.
  */
 import * as THREE from 'three'
@@ -25,19 +25,19 @@ function makeTexture(canvas: HTMLCanvasElement, repeat: [number, number] = [1, 1
 // --- CONCRETE (floors) ---
 export function createConcreteTexture(w = 512, h = 512): THREE.CanvasTexture {
   const [canvas, ctx] = createCanvas(w, h)
-  // Base dark gray
-  ctx.fillStyle = '#1a1a1a'
+  // Base medium gray — visible floor
+  ctx.fillStyle = '#2e2e2e'
   ctx.fillRect(0, 0, w, h)
   // Noise overlay
   for (let i = 0; i < w * h * 0.3; i++) {
     const x = Math.random() * w
     const y = Math.random() * h
-    const v = Math.floor(20 + Math.random() * 15)
+    const v = Math.floor(35 + Math.random() * 20)
     ctx.fillStyle = `rgba(${v}, ${v}, ${v}, 0.4)`
     ctx.fillRect(x, y, 1 + Math.random() * 2, 1 + Math.random() * 2)
   }
   // Subtle cracks
-  ctx.strokeStyle = 'rgba(10, 10, 10, 0.5)'
+  ctx.strokeStyle = 'rgba(20, 20, 20, 0.5)'
   ctx.lineWidth = 0.5
   for (let i = 0; i < 5; i++) {
     ctx.beginPath()
@@ -71,18 +71,21 @@ export function createConcreteRoughnessMap(w = 512, h = 512): THREE.CanvasTextur
 // --- PLASTER (walls) ---
 export function createPlasterTexture(w = 512, h = 512): THREE.CanvasTexture {
   const [canvas, ctx] = createCanvas(w, h)
-  ctx.fillStyle = '#1e1e1e'
+  // Warmer, brighter wall tone — visible plaster
+  ctx.fillStyle = '#353028'
   ctx.fillRect(0, 0, w, h)
   // Fine grain
   for (let i = 0; i < w * h * 0.15; i++) {
-    const v = Math.floor(25 + Math.random() * 12)
-    ctx.fillStyle = `rgba(${v}, ${v}, ${v}, 0.3)`
+    const r = Math.floor(45 + Math.random() * 15)
+    const g = Math.floor(40 + Math.random() * 12)
+    const b = Math.floor(32 + Math.random() * 10)
+    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.3)`
     ctx.fillRect(Math.random() * w, Math.random() * h, 1, 1)
   }
   // Subtle vertical streaks
   for (let i = 0; i < 20; i++) {
     const x = Math.random() * w
-    ctx.strokeStyle = `rgba(25, 25, 25, 0.15)`
+    ctx.strokeStyle = `rgba(40, 35, 28, 0.2)`
     ctx.lineWidth = 1 + Math.random() * 3
     ctx.beginPath()
     ctx.moveTo(x, 0)

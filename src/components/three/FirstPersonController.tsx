@@ -269,7 +269,7 @@ export default function FirstPersonController({
     const canMove = isPointerLocked || isMobile
     if (canMove) {
       const forward = new THREE.Vector3(-Math.sin(yaw.current), 0, -Math.cos(yaw.current))
-      const right = new THREE.Vector3(forward.z, 0, -forward.x)
+      const right = new THREE.Vector3(-forward.z, 0, forward.x)
 
       const dir = new THREE.Vector3(0, 0, 0)
 

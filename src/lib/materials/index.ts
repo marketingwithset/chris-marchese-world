@@ -5,7 +5,7 @@
  *   1. Change the `map` factory here to load a real texture
  *   2. Every component using getMaterial('name') auto-updates
  *
- * Future: swap createConcreteTexture() \u2192 useTexture('/textures/concrete.jpg')
+ * Future: swap createConcreteTexture() → useTexture('/textures/concrete.jpg')
  */
 import * as THREE from 'three'
 import {
@@ -36,7 +36,7 @@ export interface MaterialDef {
 export const MATERIAL_DEFS: Record<string, MaterialDef> = {
   // === FLOORS ===
   floor_concrete: {
-    color: '#1a1a1a',
+    color: '#2e2e2e',
     map: createConcreteTexture,
     roughnessMap: createConcreteRoughnessMap,
     metalness: 0.15,
@@ -63,10 +63,10 @@ export const MATERIAL_DEFS: Record<string, MaterialDef> = {
 
   // === WALLS ===
   wall_plaster: {
-    color: '#1e1e1e',
+    color: '#353028',
     map: createPlasterTexture,
     metalness: 0.0,
-    roughness: 0.9,
+    roughness: 0.85,
   },
   wall_capital: {
     color: '#0a0e18',
@@ -89,9 +89,9 @@ export const MATERIAL_DEFS: Record<string, MaterialDef> = {
 
   // === CEILINGS ===
   ceiling_dark: {
-    color: '#080808',
-    metalness: 0.0,
-    roughness: 1.0,
+    color: '#151515',
+    metalness: 0.05,
+    roughness: 0.95,
   },
 
   // === METALS ===

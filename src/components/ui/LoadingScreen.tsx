@@ -12,7 +12,7 @@ const TIPS = [
   'Hold SHIFT to sprint',
   'Press E near objects to interact',
   'Walk through portals to enter rooms',
-  'Toggle Day/Night with ☀ button',
+  'Toggle Day/Night with \u2600 button',
   'Click items to view details',
 ]
 

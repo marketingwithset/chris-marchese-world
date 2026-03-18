@@ -7,9 +7,9 @@ import type { ContentItem, RoomId } from '@/types'
 
 const ROOM_SECTIONS: { id: RoomId; name: string; color: string }[] = [
   { id: 'main', name: 'Main Room', color: '#c9a84c' },
-  { id: 'capital', name: 'SET Ventures — Capital', color: '#4a7fa5' },
+  { id: 'capital', name: 'SET Ventures \u2014 Capital', color: '#4a7fa5' },
   { id: 'infrastructure', name: 'Infrastructure', color: '#c9a84c' },
-  { id: 'growth', name: 'SET Marketing — Growth', color: '#5a9e6f' },
+  { id: 'growth', name: 'SET Marketing \u2014 Growth', color: '#5a9e6f' },
 ]
 
 function ContentCard({ item }: { item: ContentItem }) {
@@ -234,10 +234,10 @@ export default function ClassicHome() {
           SET ENTERPRISES
         </p>
         <p className="text-xs mb-1" style={{ color: '#a09880' }}>
-          SET Ventures · SET Marketing · SET Infrastructure
+          SET Ventures \u00b7 SET Marketing \u00b7 SET Infrastructure
         </p>
         <p className="text-xs mb-4" style={{ color: '#a09880' }}>
-          Founded 2019 — Toronto / Miami
+          Founded 2019 \u2014 Toronto / Miami
         </p>
         <div className="w-8 h-px mx-auto mb-4" style={{ background: '#c9a84c' }} />
         <p className="text-xs" style={{ color: '#a09880' }}>

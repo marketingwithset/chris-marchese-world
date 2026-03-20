@@ -89,6 +89,15 @@ export default function FirstPersonController({
   const raycaster = useRef(new THREE.Raycaster())
   const rayDir = useRef(new THREE.Vector3())
 
+  // Raycast throttle counter
+  const raycastCounter = useRef(0)
+
+  // Pre-allocated vectors to avoid per-frame GC pressure
+  const _forward = useRef(new THREE.Vector3())
+  const _right = useRef(new THREE.Vector3())
+  const _dir = useRef(new THREE.Vector3())
+  const _euler = useRef(new THREE.Euler(0, 0, 0, 'YXZ'))
+
   // Procedural footstep sound
   const playFootstep = useCallback(() => {
     if (!audioCtx.current) {
@@ -268,10 +277,10 @@ export default function FirstPersonController({
     // === MOVEMENT ===
     const canMove = isPointerLocked || isMobile
     if (canMove) {
-      const forward = new THREE.Vector3(-Math.sin(yaw.current), 0, -Math.cos(yaw.current))
-      const right = new THREE.Vector3(-forward.z, 0, forward.x)
+      const forward = _forward.current.set(-Math.sin(yaw.current), 0, -Math.cos(yaw.current))
+      const right = _right.current.set(-forward.z, 0, forward.x)
 
-      const dir = new THREE.Vector3(0, 0, 0)
+      const dir = _dir.current.set(0, 0, 0)
 
       // Desktop: WASD / Arrow keys
       if (keys.current.has('KeyW') || keys.current.has('ArrowUp')) dir.add(forward)
@@ -327,8 +336,8 @@ export default function FirstPersonController({
 
     // === CAMERA UPDATE ===
     camera.position.copy(position.current)
-    const euler = new THREE.Euler(pitch.current, yaw.current, 0, 'YXZ')
-    camera.quaternion.setFromEuler(euler)
+    _euler.current.set(pitch.current, yaw.current, 0)
+    camera.quaternion.setFromEuler(_euler.current)
 
     // === PORTAL CHECK ===
     if (Date.now() > portalCooldown.current) {
@@ -343,26 +352,29 @@ export default function FirstPersonController({
       }
     }
 
-    // === RAYCAST FOR INTERACTIONS ===
-    rayDir.current.set(0, 0, -1).applyQuaternion(camera.quaternion)
-    raycaster.current.set(camera.position, rayDir.current)
-    raycaster.current.far = INTERACT_DISTANCE
+    // === RAYCAST FOR INTERACTIONS (throttled to every 3rd frame) ===
+    raycastCounter.current++
+    if (raycastCounter.current % 3 === 0) {
+      rayDir.current.set(0, 0, -1).applyQuaternion(camera.quaternion)
+      raycaster.current.set(camera.position, rayDir.current)
+      raycaster.current.far = INTERACT_DISTANCE
 
-    const intersects = raycaster.current.intersectObjects(scene.children, true)
-    let foundTarget: string | null = null
+      const intersects = raycaster.current.intersectObjects(scene.children, true)
+      let foundTarget: string | null = null
 
-    for (const hit of intersects) {
-      const obj = hit.object
-      if (obj.userData?.interactable && obj.userData?.contentId) {
-        foundTarget = obj.userData.contentId
-        break
+      for (const hit of intersects) {
+        const obj = hit.object
+        if (obj.userData?.interactable && obj.userData?.contentId) {
+          foundTarget = obj.userData.contentId
+          break
+        }
       }
-    }
-    interactTarget.current = foundTarget
+      interactTarget.current = foundTarget
 
-    // Write to shared refs for UI
-    if (interactTargetRef) {
-      interactTargetRef.current = foundTarget
+      // Write to shared refs for UI
+      if (interactTargetRef) {
+        interactTargetRef.current = foundTarget
+      }
     }
   })
 

@@ -294,6 +294,28 @@ export const MATERIAL_DEFS: Record<string, MaterialDef> = {
     emissive: '#020208',
     emissiveIntensity: 0.2,
   },
+
+  // === SHARED ARCHITECTURAL ACCENTS (avoid duplicate inline materials) ===
+  wainscoting: {
+    color: '#151515',
+    metalness: 0.1,
+    roughness: 0.7,
+  },
+  baseboard: {
+    color: '#111111',
+    metalness: 0.2,
+    roughness: 0.6,
+  },
+  crown_molding: {
+    color: '#1a1a1a',
+    metalness: 0.15,
+    roughness: 0.6,
+  },
+  pillar_cap: {
+    color: '#141414',
+    metalness: 0.2,
+    roughness: 0.5,
+  },
 }
 
 // === Material cache ===

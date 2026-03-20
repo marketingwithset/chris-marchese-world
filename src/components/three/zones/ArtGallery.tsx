@@ -76,17 +76,6 @@ function Sculpture({ position, height, id, onInteract }: {
         </mesh>
       </group>
 
-      {/* Spotlight on sculpture */}
-      <spotLight
-        position={[0, 4, 0]}
-        target-position={[0, 1, 0]}
-        angle={0.4}
-        penumbra={0.7}
-        intensity={0.6}
-        color={0xfff8f0}
-        castShadow
-      />
-
       <Hotspot
         position={[0, 2.5, 0.6]}
         onClick={() => onInteract(id)}
@@ -151,16 +140,6 @@ export default function ArtGallery({ onHotspotClick }: ArtGalleryProps) {
             onClick={() => onHotspotClick(painting.id)}
             interactable
             contentId={painting.id}
-          />
-
-          {/* Museum-style spot per painting */}
-          <spotLight
-            position={[painting.x, 7, wallZ - zone.position[2] + 2]}
-            target-position={[painting.x, painting.y, wallZ - zone.position[2]]}
-            angle={0.35}
-            penumbra={0.7}
-            intensity={0.5}
-            color={0xfff8f0}
           />
 
           <Hotspot

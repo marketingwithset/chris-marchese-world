@@ -15,6 +15,10 @@ export default function Room() {
   const ceilingMat = useMaterial('ceiling_dark')
   const goldMat = useMaterial('gold_brushed')
   const darkMetalMat = useMaterial('dark_metal')
+  const wainscotingMat = useMaterial('wainscoting')
+  const baseboardMat = useMaterial('baseboard')
+  const crownMat = useMaterial('crown_molding')
+  const pillarCapMat = useMaterial('pillar_cap')
 
   // Pillar positions
   const pillarPositions = useMemo(() => {
@@ -37,6 +41,29 @@ export default function Room() {
     return positions
   }, [hw, hd])
 
+  // Shared emissive material for ceiling panels (avoids 12 duplicate instances)
+  const ceilingPanelMat = useMemo(() => new THREE.MeshStandardMaterial({
+    color: 0x111111,
+    emissive: new THREE.Color(0xfff5e6),
+    emissiveIntensity: 0.3,
+    metalness: 0.1,
+    roughness: 0.8,
+  }), [])
+
+  // Shared emissive material for floor accent strips
+  const floorAccentMat = useMemo(() => new THREE.MeshStandardMaterial({
+    color: 0x0a0a0a,
+    emissive: new THREE.Color(0xc9a84c),
+    emissiveIntensity: 0.4,
+  }), [])
+
+  // Shared medallion center material
+  const medallionMat = useMemo(() => new THREE.MeshStandardMaterial({
+    color: 0x0a0a0a,
+    metalness: 0.3,
+    roughness: 0.5,
+  }), [])
+
   return (
     <group>
       {/* ===== FLOOR ===== */}
@@ -47,12 +74,12 @@ export default function Room() {
 
       {/* Floor center medallion */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.002, 0]}>
-        <ringGeometry args={[3, 3.15, 64]} />
+        <ringGeometry args={[3, 3.15, 32]} />
         <primitive object={goldMat} attach="material" />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.001, 0]}>
-        <circleGeometry args={[3, 64]} />
-        <meshStandardMaterial color={0x0a0a0a} metalness={0.3} roughness={0.5} />
+        <circleGeometry args={[3, 32]} />
+        <primitive object={medallionMat} attach="material" />
       </mesh>
 
       {/* ===== CEILING ===== */}
@@ -61,29 +88,12 @@ export default function Room() {
         <primitive object={ceilingMat} attach="material" />
       </mesh>
 
-      {/* Ceiling recessed light panels */}
+      {/* Ceiling recessed light panels — emissive only, no real lights */}
       {lightPositions.map(([x, z], i) => (
-        <group key={`light-${i}`} position={[x, height - 0.02, z]}>
-          {/* Light panel surface */}
-          <mesh rotation={[Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[2.5, 2.5]} />
-            <meshStandardMaterial
-              color={0x111111}
-              emissive={0xfff5e6}
-              emissiveIntensity={0.12}
-              metalness={0.1}
-              roughness={0.8}
-            />
-          </mesh>
-          {/* Actual point light */}
-          <pointLight
-            position={[0, -0.3, 0]}
-            color={0xfff5e6}
-            intensity={0.35}
-            distance={7}
-            decay={2}
-          />
-        </group>
+        <mesh key={`light-${i}`} position={[x, height - 0.02, z]} rotation={[Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[2.5, 2.5]} />
+          <primitive object={ceilingPanelMat} attach="material" />
+        </mesh>
       ))}
 
       {/* ===== WALLS ===== */}
@@ -96,7 +106,7 @@ export default function Room() {
       {/* Back wall wainscoting */}
       <mesh position={[0, 1.5, -hd + 0.01]}>
         <planeGeometry args={[width, 3]} />
-        <meshStandardMaterial color={0x151515} metalness={0.1} roughness={0.7} />
+        <primitive object={wainscotingMat} attach="material" />
       </mesh>
       {/* Gold chair rail */}
       <mesh position={[0, 3.02, -hd + 0.02]}>
@@ -127,7 +137,7 @@ export default function Room() {
       {/* Left wall wainscoting */}
       <mesh position={[-hw + 0.01, 1.5, 0]} rotation={[0, Math.PI / 2, 0]}>
         <planeGeometry args={[depth, 3]} />
-        <meshStandardMaterial color={0x151515} metalness={0.1} roughness={0.7} />
+        <primitive object={wainscotingMat} attach="material" />
       </mesh>
       {/* Gold chair rail */}
       <mesh position={[-hw + 0.02, 3.02, 0]}>
@@ -143,7 +153,7 @@ export default function Room() {
       {/* Right wall wainscoting */}
       <mesh position={[hw - 0.01, 1.5, 0]} rotation={[0, -Math.PI / 2, 0]}>
         <planeGeometry args={[depth, 3]} />
-        <meshStandardMaterial color={0x151515} metalness={0.1} roughness={0.7} />
+        <primitive object={wainscotingMat} attach="material" />
       </mesh>
       {/* Gold chair rail */}
       <mesh position={[hw - 0.02, 3.02, 0]}>
@@ -154,29 +164,29 @@ export default function Room() {
       {/* ===== BASEBOARDS ===== */}
       <mesh position={[0, 0.1, -hd + 0.05]}>
         <boxGeometry args={[width, 0.2, 0.1]} />
-        <meshStandardMaterial color={0x111111} metalness={0.2} roughness={0.6} />
+        <primitive object={baseboardMat} attach="material" />
       </mesh>
       <mesh position={[-hw + 0.05, 0.1, 0]}>
         <boxGeometry args={[0.1, 0.2, depth]} />
-        <meshStandardMaterial color={0x111111} metalness={0.2} roughness={0.6} />
+        <primitive object={baseboardMat} attach="material" />
       </mesh>
       <mesh position={[hw - 0.05, 0.1, 0]}>
         <boxGeometry args={[0.1, 0.2, depth]} />
-        <meshStandardMaterial color={0x111111} metalness={0.2} roughness={0.6} />
+        <primitive object={baseboardMat} attach="material" />
       </mesh>
 
       {/* ===== CROWN MOLDING ===== */}
       <mesh position={[0, height - 0.1, -hd + 0.05]}>
         <boxGeometry args={[width, 0.12, 0.1]} />
-        <meshStandardMaterial color={0x1a1a1a} metalness={0.15} roughness={0.6} />
+        <primitive object={crownMat} attach="material" />
       </mesh>
       <mesh position={[-hw + 0.05, height - 0.1, 0]}>
         <boxGeometry args={[0.1, 0.12, depth]} />
-        <meshStandardMaterial color={0x1a1a1a} metalness={0.15} roughness={0.6} />
+        <primitive object={crownMat} attach="material" />
       </mesh>
       <mesh position={[hw - 0.05, height - 0.1, 0]}>
         <boxGeometry args={[0.1, 0.12, depth]} />
-        <meshStandardMaterial color={0x1a1a1a} metalness={0.15} roughness={0.6} />
+        <primitive object={crownMat} attach="material" />
       </mesh>
 
       {/* ===== WALL PILLARS WITH GOLD TRIM ===== */}
@@ -190,12 +200,12 @@ export default function Room() {
           {/* Base cap */}
           <mesh position={[0, 0.12, 0]}>
             <boxGeometry args={[0.6, 0.24, 0.6]} />
-            <meshStandardMaterial color={0x141414} metalness={0.2} roughness={0.5} />
+            <primitive object={pillarCapMat} attach="material" />
           </mesh>
           {/* Top cap */}
           <mesh position={[0, height - 0.12, 0]}>
             <boxGeometry args={[0.6, 0.24, 0.6]} />
-            <meshStandardMaterial color={0x141414} metalness={0.2} roughness={0.5} />
+            <primitive object={pillarCapMat} attach="material" />
           </mesh>
           {/* Gold trim ring at mid-height */}
           <mesh position={[0, 3, 0]}>
@@ -228,16 +238,16 @@ export default function Room() {
       </mesh>
 
       {/* ===== FLOOR ACCENT LIGHTING ===== */}
-      {/* Subtle up-lights along the back wall */}
+      {/* Emissive strips instead of real point lights */}
       {[-12, -6, 0, 6, 12].map((x, i) => (
-        <pointLight
+        <mesh
           key={`floor-up-${i}`}
-          position={[x, 0.15, -hd + 0.5]}
-          color={0xc9a84c}
-          intensity={0.06}
-          distance={3}
-          decay={2}
-        />
+          position={[x, 0.01, -hd + 0.3]}
+          rotation={[-Math.PI / 2, 0, 0]}
+        >
+          <planeGeometry args={[1.5, 0.3]} />
+          <primitive object={floorAccentMat} attach="material" />
+        </mesh>
       ))}
 
       {/* ===== FLOOR GRID ===== */}

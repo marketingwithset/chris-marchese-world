@@ -25,14 +25,18 @@ export default function VideoScreen({
   const groupRef = useRef<THREE.Group>(null)
   const { camera } = useThree()
   const [isClose, setIsClose] = useState(false)
+  const _worldPos = useRef(new THREE.Vector3())
+  const frameCount = useRef(0)
 
-  // Only render iframe when player is close (performance)
+  // Only render iframe when player is close (check every 10th frame, no allocs)
   useFrame(() => {
+    frameCount.current++
+    if (frameCount.current % 10 !== 0) return // throttle to ~6Hz
     if (!groupRef.current) return
-    const worldPos = new THREE.Vector3()
-    groupRef.current.getWorldPosition(worldPos)
-    const dist = camera.position.distanceTo(worldPos)
-    setIsClose(dist < 18)
+    groupRef.current.getWorldPosition(_worldPos.current)
+    const dist = camera.position.distanceTo(_worldPos.current)
+    const close = dist < 18
+    if (close !== isClose) setIsClose(close)
   })
 
   return (
@@ -81,13 +85,7 @@ export default function VideoScreen({
         </Html>
       )}
 
-      {/* Screen glow */}
-      <pointLight
-        position={[0, 0, 0.5]}
-        color={0x4a7fa5}
-        intensity={isClose ? 0.5 : 0.1}
-        distance={4}
-      />
+      {/* Screen glow — handled by emissive on screen surface, no real light needed */}
 
       {/* Label under screen */}
       {label && (

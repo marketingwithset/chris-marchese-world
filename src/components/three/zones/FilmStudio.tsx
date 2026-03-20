@@ -142,17 +142,15 @@ export default function FilmStudio({ onHotspotClick }: FilmStudioProps) {
         />
       </group>
 
-      {/* Film strip accent lights along ceiling */}
-      {[-4, -2, 0, 2, 4].map((z, i) => (
-        <pointLight
-          key={`film-light-${i}`}
-          position={[-4, 7.5, z]}
-          color={0x4a7fa5}
-          intensity={0.15}
-          distance={5}
-          decay={2}
+      {/* Film strip accent — emissive strip instead of 5 point lights */}
+      <mesh position={[-4, 7.5, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[1, 10]} />
+        <meshStandardMaterial
+          color={0x050510}
+          emissive={0x4a7fa5}
+          emissiveIntensity={0.5}
         />
-      ))}
+      </mesh>
 
       {/* Floor rug / area marker */}
       <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>

@@ -29,6 +29,14 @@ interface FirstPersonControllerProps {
   interactTargetRef?: React.RefObject<string | null>
   /** Ref to write current zone name for proximity indicator */
   nearZoneRef?: React.RefObject<string | null>
+  /** Third-person camera mode */
+  thirdPerson?: boolean
+  /** Ref to expose character position for external rendering */
+  characterPosRef?: React.RefObject<{ x: number; y: number; z: number }>
+  /** Ref to expose movement state for character animation */
+  movingRef?: React.RefObject<boolean>
+  /** Ref to expose sprinting state */
+  sprintingRef?: React.RefObject<boolean>
 }
 
 // Spawn positions per room
@@ -50,6 +58,10 @@ const HEAD_BOB_SPEED = 10
 const HEAD_BOB_AMOUNT = 0.035
 const SPRINT_BOB_AMOUNT = 0.055
 const EYE_HEIGHT = 1.6
+const TP_CAM_DISTANCE = 5
+const TP_CAM_HEIGHT = 3.0
+const TP_LOOK_HEIGHT = 1.2
+const TP_LERP = 0.08
 
 export default function FirstPersonController({
   currentRoom,
@@ -61,6 +73,10 @@ export default function FirstPersonController({
   joystickInput,
   isMobile = false,
   interactTargetRef,
+  thirdPerson = false,
+  characterPosRef,
+  movingRef,
+  sprintingRef,
 }: FirstPersonControllerProps) {
   const { camera, gl, scene } = useThree()
 
@@ -97,6 +113,9 @@ export default function FirstPersonController({
   const _right = useRef(new THREE.Vector3())
   const _dir = useRef(new THREE.Vector3())
   const _euler = useRef(new THREE.Euler(0, 0, 0, 'YXZ'))
+
+  // Third-person camera target (pre-allocated)
+  const _camTarget = useRef(new THREE.Vector3())
 
   // Touch-drag camera look state (mobile)
   const touchId = useRef<number | null>(null)
@@ -282,7 +301,7 @@ export default function FirstPersonController({
     const dt = Math.min(delta, 0.1)
 
     // === MOVEMENT ===
-    const canMove = isPointerLocked || isMobile
+    const canMove = isPointerLocked || isMobile || thirdPerson
     if (canMove) {
       const forward = _forward.current.set(-Math.sin(yaw.current), 0, -Math.cos(yaw.current))
       const right = _right.current.set(-forward.z, 0, forward.x)
@@ -320,11 +339,17 @@ export default function FirstPersonController({
         position.current.x = resolvedX
         position.current.z = resolvedZ
         isMoving.current = true
+        if (movingRef) movingRef.current = true
+        if (sprintingRef) sprintingRef.current = sprinting
 
-        // Head bob
-        bobTime.current += dt * HEAD_BOB_SPEED * (sprinting ? 1.4 : 1)
-        const bobAmount = sprinting ? SPRINT_BOB_AMOUNT : HEAD_BOB_AMOUNT
-        position.current.y = EYE_HEIGHT + Math.sin(bobTime.current) * bobAmount
+        if (!thirdPerson) {
+          // Head bob (first-person only)
+          bobTime.current += dt * HEAD_BOB_SPEED * (sprinting ? 1.4 : 1)
+          const bobAmount = sprinting ? SPRINT_BOB_AMOUNT : HEAD_BOB_AMOUNT
+          position.current.y = EYE_HEIGHT + Math.sin(bobTime.current) * bobAmount
+        } else {
+          position.current.y = EYE_HEIGHT
+        }
 
         // Footstep sounds
         const stepInterval = sprinting ? 0.3 : 0.45
@@ -335,14 +360,35 @@ export default function FirstPersonController({
         }
       } else {
         isMoving.current = false
+        if (movingRef) movingRef.current = false
+        if (sprintingRef) sprintingRef.current = false
         position.current.y += (EYE_HEIGHT - position.current.y) * Math.min(1, dt * 8)
       }
     }
 
+    // Expose character position
+    if (characterPosRef) {
+      characterPosRef.current = {
+        x: position.current.x,
+        y: 0,
+        z: position.current.z,
+      }
+    }
+
     // === CAMERA UPDATE ===
-    camera.position.copy(position.current)
-    _euler.current.set(pitch.current, yaw.current, 0)
-    camera.quaternion.setFromEuler(_euler.current)
+    if (thirdPerson) {
+      // Camera orbits behind character
+      const camX = position.current.x - Math.sin(yaw.current) * TP_CAM_DISTANCE
+      const camZ = position.current.z - Math.cos(yaw.current) * TP_CAM_DISTANCE
+      const camY = TP_CAM_HEIGHT + Math.sin(pitch.current) * 1.5
+      _camTarget.current.set(camX, camY, camZ)
+      camera.position.lerp(_camTarget.current, TP_LERP)
+      camera.lookAt(position.current.x, TP_LOOK_HEIGHT, position.current.z)
+    } else {
+      camera.position.copy(position.current)
+      _euler.current.set(pitch.current, yaw.current, 0)
+      camera.quaternion.setFromEuler(_euler.current)
+    }
 
     // === PORTAL CHECK ===
     if (Date.now() > portalCooldown.current) {
@@ -360,8 +406,15 @@ export default function FirstPersonController({
     // === RAYCAST FOR INTERACTIONS (throttled to every 3rd frame) ===
     raycastCounter.current++
     if (raycastCounter.current % 3 === 0) {
-      rayDir.current.set(0, 0, -1).applyQuaternion(camera.quaternion)
-      raycaster.current.set(camera.position, rayDir.current)
+      if (thirdPerson) {
+        // Ray from character position looking forward
+        rayDir.current.set(-Math.sin(yaw.current), 0, -Math.cos(yaw.current))
+        const charPos = _camTarget.current.set(position.current.x, TP_LOOK_HEIGHT, position.current.z)
+        raycaster.current.set(charPos, rayDir.current)
+      } else {
+        rayDir.current.set(0, 0, -1).applyQuaternion(camera.quaternion)
+        raycaster.current.set(camera.position, rayDir.current)
+      }
       raycaster.current.far = INTERACT_DISTANCE
 
       const intersects = raycaster.current.intersectObjects(scene.children, true)

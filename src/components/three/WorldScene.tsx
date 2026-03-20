@@ -19,6 +19,7 @@ import CapitalRoom from './rooms/CapitalRoom'
 import InfrastructureRoom from './rooms/InfrastructureRoom'
 import GrowthRoom from './rooms/GrowthRoom'
 import NeonSign from './objects/NeonSign'
+import PlayerCharacter from './objects/PlayerCharacter'
 
 import ContentOverlay from '../ui/ContentOverlay'
 import RoomTransition from '../ui/RoomTransition'
@@ -67,9 +68,16 @@ function WorldSceneInner() {
   const interactTargetRef = useRef<string | null>(null)
   const [interactPrompt, setInteractPrompt] = useState<string | null>(null)
   const quality = useQuality()
+  const [thirdPerson, setThirdPerson] = useState(true)
+  const characterPosRef = useRef({ x: 0, y: 0, z: 12 })
+  const movingRef = useRef(false)
+  const sprintingRef = useRef(false)
+  const [charPos, setCharPos] = useState<[number, number, number]>([0, 0, 12])
+  const [charMoving, setCharMoving] = useState(false)
+  const [charSprinting, setCharSprinting] = useState(false)
 
-  // UI is visible when pointer is locked (desktop) OR mobile is active
-  const uiVisible = isPointerLocked || mobileActive
+  // UI is visible when pointer is locked (desktop) OR mobile is active OR third-person
+  const uiVisible = isPointerLocked || mobileActive || thirdPerson
 
   // Sync player position + interaction state from Three.js to React (throttled)
   useEffect(() => {
@@ -77,9 +85,15 @@ function WorldSceneInner() {
       setPlayerPos({ ...posRef.current })
       setPlayerYaw(yawRef.current)
       setInteractPrompt(interactTargetRef.current ? 'Press E to interact' : null)
+      if (thirdPerson) {
+        const cp = characterPosRef.current
+        setCharPos([cp.x, cp.y, cp.z])
+        setCharMoving(movingRef.current)
+        setCharSprinting(sprintingRef.current)
+      }
     }, 100)
     return () => clearInterval(interval)
-  }, [])
+  }, [thirdPerson])
 
   // Auto-activate mobile mode on first touch
   useEffect(() => {
@@ -147,6 +161,10 @@ function WorldSceneInner() {
             isMobile={isMobile}
             joystickInput={joystickInput}
             interactTargetRef={interactTargetRef}
+            thirdPerson={thirdPerson}
+            characterPosRef={characterPosRef}
+            movingRef={movingRef}
+            sprintingRef={sprintingRef}
           />
 
           {/* HDRI Environment for realistic reflections — skip on low tier */}
@@ -227,6 +245,16 @@ function WorldSceneInner() {
             />
           )}
 
+          {/* Third-person character model */}
+          {thirdPerson && (
+            <PlayerCharacter
+              position={charPos}
+              rotation={playerYaw}
+              isMoving={charMoving}
+              isSprinting={charSprinting}
+            />
+          )}
+
           {/* Player position tracker for minimap */}
           <PlayerTracker posRef={posRef} yawRef={yawRef} />
 
@@ -245,7 +273,7 @@ function WorldSceneInner() {
       />
 
       {/* Click to enter prompt (desktop only, when not pointer locked) */}
-      {!isPointerLocked && !activeContent && !transitioning && !isMobile && (
+      {!isPointerLocked && !activeContent && !transitioning && !isMobile && !thirdPerson && (
         <div className="fixed inset-0 z-10 flex items-center justify-center pointer-events-none">
           <div
             className="px-6 py-3 text-sm uppercase tracking-widest animate-pulse"
@@ -322,6 +350,24 @@ function WorldSceneInner() {
            currentRoom === 'infrastructure' ? 'SET \u00b7 INFRASTRUCTURE' :
            'SET MARKETING \u00b7 GROWTH'}
         </div>
+      )}
+
+      {/* View toggle (first/third person) */}
+      {uiVisible && (
+        <button
+          className="fixed top-4 right-4 z-30 px-3 py-1.5 text-xs uppercase tracking-widest"
+          style={{
+            fontFamily: 'var(--font-heading)',
+            color: '#c9a84c',
+            background: 'rgba(6, 6, 6, 0.6)',
+            border: '1px solid rgba(201, 168, 76, 0.3)',
+            backdropFilter: 'blur(8px)',
+            cursor: 'pointer',
+          }}
+          onClick={() => setThirdPerson(prev => !prev)}
+        >
+          {thirdPerson ? '1st Person' : '3rd Person'}
+        </button>
       )}
 
       {/* Ambient audio toggle with zone-specific layers */}

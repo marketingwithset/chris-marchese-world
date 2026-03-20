@@ -64,7 +64,11 @@ function ContentCard({ item }: { item: ContentItem }) {
   )
 }
 
-export default function ClassicHome() {
+interface ClassicHomeProps {
+  onEnterWorld?: () => void
+}
+
+export default function ClassicHome({ onEnterWorld }: ClassicHomeProps) {
   const [activeRoom, setActiveRoom] = useState<RoomId | null>(null)
 
   const roomsToShow = activeRoom
@@ -121,12 +125,28 @@ export default function ClassicHome() {
           className="text-6xl mb-3 tracking-wider"
           style={{ fontFamily: 'var(--font-heading)', color: '#f0ead8' }}
         >
-          DIGITAL WORLD
+          CHRIS MARCHESE
         </h2>
-        <p className="text-sm max-w-lg mx-auto" style={{ color: '#a09880' }}>
+        <p className="text-sm max-w-lg mx-auto mb-8" style={{ color: '#a09880' }}>
           Canadian producer, actor, entrepreneur, and contemporary artist. Art. Film. Capital. Infrastructure. Growth. Enter the world of Chris Marchese.
         </p>
-        <div className="w-12 h-0.5 mx-auto mt-6" style={{ background: '#c9a84c' }} />
+        {onEnterWorld && (
+          <button
+            onClick={onEnterWorld}
+            className="px-8 py-3 text-sm uppercase tracking-widest transition-all hover:scale-105 hover:shadow-lg"
+            style={{
+              fontFamily: 'var(--font-heading)',
+              color: '#060606',
+              background: 'linear-gradient(135deg, #c9a84c, #e0c868)',
+              border: 'none',
+              cursor: 'pointer',
+              letterSpacing: '0.15em',
+            }}
+          >
+            Enter 3D World
+          </button>
+        )}
+        <div className="w-12 h-0.5 mx-auto mt-8" style={{ background: '#c9a84c' }} />
       </section>
 
       {/* Room sections */}

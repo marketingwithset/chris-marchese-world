@@ -43,7 +43,10 @@ export default function Home() {
       {loaded && (
         <>
           <ViewToggle mode={viewMode} onToggle={handleToggleView} />
-          {viewMode === 'world' ? <WorldScene /> : <ClassicHome />}
+          {viewMode === 'world' ? <WorldScene /> : <ClassicHome onEnterWorld={() => {
+            setViewMode('world')
+            localStorage.setItem('cm-view-mode', 'world')
+          }} />}
         </>
       )}
     </>

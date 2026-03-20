@@ -177,22 +177,48 @@ export default function FirstPersonController({
     yaw.current = spawn.yaw
     pitch.current = 0
     portalCooldown.current = Date.now() + PORTAL_COOLDOWN
-  }, [currentRoom])
+
+    // Snap camera to correct third-person position immediately (no lerp lag)
+    if (thirdPerson) {
+      const camX = spawn.pos[0] + Math.sin(spawn.yaw) * TP_CAM_DISTANCE
+      const camZ = spawn.pos[2] + Math.cos(spawn.yaw) * TP_CAM_DISTANCE
+      camera.position.set(camX, TP_CAM_HEIGHT, camZ)
+      camera.lookAt(spawn.pos[0], TP_LOOK_HEIGHT, spawn.pos[2])
+    }
+  }, [currentRoom, thirdPerson, camera])
+
+  // Mouse drag state for third-person orbit
+  const mouseDragging = useRef(false)
+  const mouseDownPos = useRef({ x: 0, y: 0 })
+  const clickRaycaster = useRef(new THREE.Raycaster())
+  const clickMouse = useRef(new THREE.Vector2())
 
   // Pointer lock handlers (desktop)
   const requestPointerLock = useCallback(() => {
-    if (!enabled) return
+    if (!enabled || thirdPerson) return
     gl.domElement.requestPointerLock()
-  }, [gl, enabled])
+  }, [gl, enabled, thirdPerson])
 
   useEffect(() => {
     const canvas = gl.domElement
 
     const onMouseMove = (e: MouseEvent) => {
-      if (!document.pointerLockElement || !enabled) return
-      yaw.current -= e.movementX * MOUSE_SENSITIVITY
-      pitch.current -= e.movementY * MOUSE_SENSITIVITY
-      pitch.current = Math.max(-1.4, Math.min(1.4, pitch.current))
+      if (!enabled) return
+
+      if (thirdPerson) {
+        // Third-person: drag to orbit camera (no pointer lock needed)
+        if (mouseDragging.current) {
+          yaw.current -= e.movementX * MOUSE_SENSITIVITY
+          pitch.current -= e.movementY * MOUSE_SENSITIVITY
+          pitch.current = Math.max(-0.8, Math.min(0.8, pitch.current))
+        }
+      } else {
+        // First-person: requires pointer lock
+        if (!document.pointerLockElement) return
+        yaw.current -= e.movementX * MOUSE_SENSITIVITY
+        pitch.current -= e.movementY * MOUSE_SENSITIVITY
+        pitch.current = Math.max(-1.4, Math.min(1.4, pitch.current))
+      }
     }
 
     const onPointerLockChange = () => {
@@ -210,26 +236,72 @@ export default function FirstPersonController({
       keys.current.delete(e.code)
     }
 
+    const onMouseDown = (e: MouseEvent) => {
+      if (!enabled) return
+      if (thirdPerson) {
+        // Right-click or left-click drag for camera orbit
+        mouseDragging.current = true
+        mouseDownPos.current = { x: e.clientX, y: e.clientY }
+      }
+    }
+
+    const onMouseUp = (e: MouseEvent) => {
+      if (thirdPerson && mouseDragging.current) {
+        const dx = e.clientX - mouseDownPos.current.x
+        const dy = e.clientY - mouseDownPos.current.y
+        const wasDrag = Math.abs(dx) > 5 || Math.abs(dy) > 5
+
+        mouseDragging.current = false
+
+        // If it was a click (not a drag), try to interact with clicked object
+        if (!wasDrag && enabled) {
+          const rect = canvas.getBoundingClientRect()
+          clickMouse.current.x = ((e.clientX - rect.left) / rect.width) * 2 - 1
+          clickMouse.current.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
+          clickRaycaster.current.setFromCamera(clickMouse.current, camera)
+          clickRaycaster.current.far = 50
+          const hits = clickRaycaster.current.intersectObjects(scene.children, true)
+          for (const hit of hits) {
+            if (hit.object.userData?.interactable && hit.object.userData?.contentId) {
+              onInteract(hit.object.userData.contentId)
+              break
+            }
+          }
+        }
+      }
+    }
+
     const onClick = () => {
-      if (!document.pointerLockElement && enabled && !isMobile) {
+      if (!thirdPerson && !document.pointerLockElement && enabled && !isMobile) {
         requestPointerLock()
       }
+    }
+
+    // Prevent context menu on right-click in third-person
+    const onContextMenu = (e: Event) => {
+      if (thirdPerson) e.preventDefault()
     }
 
     document.addEventListener('mousemove', onMouseMove)
     document.addEventListener('pointerlockchange', onPointerLockChange)
     document.addEventListener('keydown', onKeyDown)
     document.addEventListener('keyup', onKeyUp)
+    canvas.addEventListener('mousedown', onMouseDown)
+    document.addEventListener('mouseup', onMouseUp)
     canvas.addEventListener('click', onClick)
+    canvas.addEventListener('contextmenu', onContextMenu)
 
     return () => {
       document.removeEventListener('mousemove', onMouseMove)
       document.removeEventListener('pointerlockchange', onPointerLockChange)
       document.removeEventListener('keydown', onKeyDown)
       document.removeEventListener('keyup', onKeyUp)
+      canvas.removeEventListener('mousedown', onMouseDown)
+      document.removeEventListener('mouseup', onMouseUp)
       canvas.removeEventListener('click', onClick)
+      canvas.removeEventListener('contextmenu', onContextMenu)
     }
-  }, [gl, enabled, onInteract, requestPointerLock, setPointerLocked, isMobile])
+  }, [gl, enabled, onInteract, requestPointerLock, setPointerLocked, isMobile, thirdPerson, camera, scene])
 
   // Release pointer lock when disabled
   useEffect(() => {
@@ -377,9 +449,10 @@ export default function FirstPersonController({
 
     // === CAMERA UPDATE ===
     if (thirdPerson) {
-      // Camera orbits behind character
-      const camX = position.current.x - Math.sin(yaw.current) * TP_CAM_DISTANCE
-      const camZ = position.current.z - Math.cos(yaw.current) * TP_CAM_DISTANCE
+      // Camera orbits behind character (offset in opposite-to-forward direction)
+      // forward = (-sin(yaw), 0, -cos(yaw)), so "behind" = position + sin(yaw), + cos(yaw)
+      const camX = position.current.x + Math.sin(yaw.current) * TP_CAM_DISTANCE
+      const camZ = position.current.z + Math.cos(yaw.current) * TP_CAM_DISTANCE
       const camY = TP_CAM_HEIGHT + Math.sin(pitch.current) * 1.5
       _camTarget.current.set(camX, camY, camZ)
       camera.position.lerp(_camTarget.current, TP_LERP)

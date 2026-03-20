@@ -7,7 +7,7 @@ import * as THREE from 'three'
 
 const MODEL_PATH = '/models/cartoon-dog.glb'
 const SCALE = 0.8
-const Y_OFFSET = 0.45 // Raise model above the floor so it doesn't clip through
+const Y_OFFSET = 0.7 // Raise model above the floor so it doesn't clip through
 
 // Animation parameters
 const WALK_BOB_SPEED = 10

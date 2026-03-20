@@ -143,7 +143,7 @@ function WorldSceneInner() {
   return (
     <div className="relative w-screen h-screen">
       <Canvas
-        camera={{ fov: 65, near: 0.1, far: 100, position: [0, 1.6, 12] }}
+        camera={{ fov: 65, near: 0.1, far: 100, position: [0, 3, 17] }}
         shadows={shadows}
         gl={{ antialias, alpha: false }}
         dpr={dpr}

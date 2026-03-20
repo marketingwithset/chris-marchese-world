@@ -9,22 +9,23 @@ import ImageFrame from '../objects/ImageFrame'
 import { ZONES } from '@/lib/scene/zones'
 import { useMaterial } from '@/lib/materials/useMaterial'
 
-// Exhibition pieces — mixed sizes for visual rhythm
+// Exhibition pieces — real artbymarchese.com originals, mixed sizes for visual rhythm
 const PAINTINGS = [
-  { id: 'art-1', label: 'GOLDEN HOUR',   bgColor: '#3a2a10', w: 3.0, h: 2.0, x: -14, y: 3.5 },
-  { id: 'art-2', label: 'BLUE HORIZON',  bgColor: '#1a2a3c', w: 1.8, h: 2.8, x: -10, y: 3.8 },
-  { id: 'art-3', label: 'NEON DREAMS',   bgColor: '#2a1020', w: 4.0, h: 3.0, x: -5,  y: 3.5 },
-  { id: 'art-4', label: 'MARCHESE',      bgColor: '#0a0a0a', w: 3.5, h: 2.5, x: 0,   y: 4.0 },
-  { id: 'art-5', label: 'MIDNIGHT SUN',  bgColor: '#1a1520', w: 2.0, h: 3.0, x: 5,   y: 3.5 },
-  { id: 'art-6', label: 'EARTH & GOLD',  bgColor: '#2b2116', w: 3.2, h: 2.2, x: 10,  y: 3.5 },
-  { id: 'art-7', label: 'PURPLE REIGN',  bgColor: '#1a0a20', w: 1.5, h: 2.5, x: 14,  y: 3.8 },
+  { id: 'art-1', label: "I'M IN LOVE WITH MONEY",  bgColor: '#2a1a08', w: 4.0, h: 3.0, x: -14, y: 3.8 },
+  { id: 'art-2', label: 'DEVIL IN THE DETAILS',     bgColor: '#2a0a0a', w: 2.5, h: 3.2, x: -10, y: 3.6 },
+  { id: 'art-3', label: 'WE ARE VENOM',             bgColor: '#0a0a1a', w: 3.0, h: 2.5, x: -6,  y: 3.5 },
+  { id: 'art-4', label: 'RUN IT UP',                bgColor: '#1a0a08', w: 3.5, h: 2.8, x: -1.5, y: 4.0 },
+  { id: 'art-5', label: 'CARAT KING',               bgColor: '#1a1a0a', w: 2.2, h: 3.0, x: 3,   y: 3.5 },
+  { id: 'art-7', label: 'HORSEPOWER',               bgColor: '#0a0a0a', w: 3.0, h: 2.2, x: 7,   y: 3.5 },
+  { id: 'art-6', label: "BLOWIN' MONEY",            bgColor: '#1a1008', w: 2.0, h: 2.8, x: 11,  y: 3.8 },
+  { id: 'art-9', label: 'BANK OF DAFFY',            bgColor: '#0a1010', w: 2.5, h: 2.5, x: 14,  y: 3.5 },
 ]
 
-// Sculpture pedestals
+// Sculpture pedestals — featuring select originals
 const SCULPTURES = [
-  { id: 'art-8', label: 'FORM I',  x: -8,  z: -11, height: 1.2 },
-  { id: 'art-9', label: 'FORM II', x: 0,   z: -10, height: 1.4 },
-  { id: 'art-10', label: 'FORM III', x: 8, z: -11, height: 1.0 },
+  { id: 'art-10', label: 'LA BELLEZA',  x: -8,  z: -11, height: 1.2 },
+  { id: 'art-8',  label: 'ON TOP',      x: 0,   z: -10, height: 1.4 },
+  { id: 'art-11', label: 'CAT WOMAN',   x: 8,   z: -11, height: 1.0 },
 ]
 
 interface ArtGalleryProps {

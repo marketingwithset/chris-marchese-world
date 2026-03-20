@@ -136,6 +136,9 @@ interface ZoneAudioState {
   nodes: (AudioBufferSourceNode | OscillatorNode)[]
 }
 
+const BG_MUSIC_SRC = '/audio/fly-to-tulum.mp3'
+const BG_MUSIC_VOLUME = 0.2
+
 export default function AudioToggle({
   volume = 0.15,
   playerX = 0,
@@ -148,6 +151,7 @@ export default function AudioToggle({
   const masterGainRef = useRef<GainNode | null>(null)
   const nodesRef = useRef<AudioBufferSourceNode[]>([])
   const zoneStatesRef = useRef<Map<string, ZoneAudioState>>(new Map())
+  const bgMusicRef = useRef<HTMLAudioElement | null>(null)
 
   // Create base ambient soundscape
   const createAmbience = useCallback((ctx: AudioContext, gain: GainNode) => {
@@ -251,6 +255,14 @@ export default function AudioToggle({
       createAmbience(ctx, gain)
       initZoneAudio(ctx, gain)
       gain.gain.linearRampToValueAtTime(volume, ctx.currentTime + 1.5)
+
+      // Start background music track
+      const audio = new Audio(BG_MUSIC_SRC)
+      audio.loop = true
+      audio.volume = BG_MUSIC_VOLUME
+      audio.play().catch(() => {})
+      bgMusicRef.current = audio
+
       setInitialized(true)
       setPlaying(true)
       return
@@ -262,10 +274,12 @@ export default function AudioToggle({
 
     if (playing) {
       gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.8)
+      bgMusicRef.current?.pause()
       setPlaying(false)
     } else {
       if (ctx.state === 'suspended') ctx.resume()
       gain.gain.linearRampToValueAtTime(volume, ctx.currentTime + 1)
+      bgMusicRef.current?.play().catch(() => {})
       setPlaying(true)
     }
   }, [initialized, playing, volume, createAmbience, initZoneAudio])
@@ -277,6 +291,10 @@ export default function AudioToggle({
         state.nodes.forEach((n) => { try { n.stop() } catch {} })
       })
       ctxRef.current?.close()
+      if (bgMusicRef.current) {
+        bgMusicRef.current.pause()
+        bgMusicRef.current.src = ''
+      }
     }
   }, [])
 

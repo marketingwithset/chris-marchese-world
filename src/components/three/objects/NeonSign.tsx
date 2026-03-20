@@ -1,6 +1,7 @@
 'use client'
 
 import { Text } from '@react-three/drei'
+import { useQuality } from '@/contexts/QualityContext'
 
 interface NeonSignProps {
   text: string
@@ -17,18 +18,22 @@ export default function NeonSign({
   color = '#c9a84c',
   fontSize = 0.8,
 }: NeonSignProps) {
+  const quality = useQuality()
+
   return (
     <group position={position} rotation={rotation}>
-      {/* Glow backdrop */}
-      <Text
-        fontSize={fontSize * 1.05}
-        color={color}
-        anchorX="center"
-        anchorY="middle"
-      >
-        {text}
-        <meshBasicMaterial color={color} transparent opacity={0.15} toneMapped={false} />
-      </Text>
+      {/* Glow backdrop — skip on low tier to halve Text instances */}
+      {quality !== 'low' && (
+        <Text
+          fontSize={fontSize * 1.05}
+          color={color}
+          anchorX="center"
+          anchorY="middle"
+        >
+          {text}
+          <meshBasicMaterial color={color} transparent opacity={0.15} toneMapped={false} />
+        </Text>
+      )}
 
       {/* Main text */}
       <Text

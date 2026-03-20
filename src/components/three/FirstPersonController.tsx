@@ -42,6 +42,7 @@ const SPAWN: Record<string, { pos: [number, number, number]; yaw: number }> = {
 const MOVE_SPEED = 5
 const SPRINT_SPEED = 9
 const MOUSE_SENSITIVITY = 0.002
+const TOUCH_SENSITIVITY = 0.004
 const PLAYER_RADIUS = 0.35
 const INTERACT_DISTANCE = 4
 const PORTAL_COOLDOWN = 1500
@@ -60,7 +61,6 @@ export default function FirstPersonController({
   joystickInput,
   isMobile = false,
   interactTargetRef,
-  nearZoneRef,
 }: FirstPersonControllerProps) {
   const { camera, gl, scene } = useThree()
 
@@ -98,6 +98,10 @@ export default function FirstPersonController({
   const _dir = useRef(new THREE.Vector3())
   const _euler = useRef(new THREE.Euler(0, 0, 0, 'YXZ'))
 
+  // Touch-drag camera look state (mobile)
+  const touchId = useRef<number | null>(null)
+  const touchStart = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
+
   // Procedural footstep sound
   const playFootstep = useCallback(() => {
     if (!audioCtx.current) {
@@ -107,7 +111,6 @@ export default function FirstPersonController({
     if (ctx.state === 'suspended') ctx.resume()
 
     const now = ctx.currentTime
-    // Short noise burst filtered to sound like a soft footstep
     const bufferSize = ctx.sampleRate * 0.06
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
     const data = buffer.getChannelData(0)
@@ -157,7 +160,7 @@ export default function FirstPersonController({
     portalCooldown.current = Date.now() + PORTAL_COOLDOWN
   }, [currentRoom])
 
-  // Pointer lock handlers
+  // Pointer lock handlers (desktop)
   const requestPointerLock = useCallback(() => {
     if (!enabled) return
     gl.domElement.requestPointerLock()
@@ -179,7 +182,6 @@ export default function FirstPersonController({
 
     const onKeyDown = (e: KeyboardEvent) => {
       keys.current.add(e.code)
-      // E to interact
       if (e.code === 'KeyE' && interactTarget.current) {
         onInteract(interactTarget.current)
       }
@@ -190,7 +192,7 @@ export default function FirstPersonController({
     }
 
     const onClick = () => {
-      if (!document.pointerLockElement && enabled) {
+      if (!document.pointerLockElement && enabled && !isMobile) {
         requestPointerLock()
       }
     }
@@ -208,7 +210,7 @@ export default function FirstPersonController({
       document.removeEventListener('keyup', onKeyUp)
       canvas.removeEventListener('click', onClick)
     }
-  }, [gl, enabled, onInteract, requestPointerLock, setPointerLocked])
+  }, [gl, enabled, onInteract, requestPointerLock, setPointerLocked, isMobile])
 
   // Release pointer lock when disabled
   useEffect(() => {
@@ -217,62 +219,67 @@ export default function FirstPersonController({
     }
   }, [enabled])
 
-  // Mobile gyroscope look controls
+  // Mobile touch-drag camera look (right side of screen)
   useEffect(() => {
     if (!isMobile) return
 
-    let initialAlpha: number | null = null
-    let initialBeta: number | null = null
-
-    const onDeviceOrientation = (e: DeviceOrientationEvent) => {
-      if (e.alpha === null || e.beta === null) return
-
-      // Calibrate on first reading
-      if (initialAlpha === null) {
-        initialAlpha = e.alpha
-        initialBeta = e.beta
-      }
-
-      // Convert to delta from initial
-      let deltaAlpha = (e.alpha - initialAlpha) * Math.PI / 180
-      const deltaBeta = ((e.beta! - (initialBeta || 0)) * Math.PI / 180) * 0.5
-
-      // Wrap alpha around
-      if (deltaAlpha > Math.PI) deltaAlpha -= 2 * Math.PI
-      if (deltaAlpha < -Math.PI) deltaAlpha += 2 * Math.PI
-
-      yaw.current = Math.PI - deltaAlpha
-      pitch.current = Math.max(-1.4, Math.min(1.4, -deltaBeta))
-    }
-
-    // Request permission on iOS 13+
-    const requestPermission = async () => {
-      if (typeof (DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> }).requestPermission === 'function') {
-        try {
-          const perm = await (DeviceOrientationEvent as unknown as { requestPermission: () => Promise<string> }).requestPermission()
-          if (perm === 'granted') {
-            window.addEventListener('deviceorientation', onDeviceOrientation)
-          }
-        } catch {
-          console.warn('Gyroscope permission denied')
+    const onTouchStart = (e: TouchEvent) => {
+      if (!enabled) return
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i]
+        // Only capture touches on the right half of screen (left half is joystick)
+        if (t.clientX > window.innerWidth * 0.4 && touchId.current === null) {
+          touchId.current = t.identifier
+          touchStart.current = { x: t.clientX, y: t.clientY }
+          break
         }
-      } else {
-        window.addEventListener('deviceorientation', onDeviceOrientation)
       }
     }
 
-    requestPermission()
+    const onTouchMove = (e: TouchEvent) => {
+      if (touchId.current === null) return
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i]
+        if (t.identifier === touchId.current) {
+          const dx = t.clientX - touchStart.current.x
+          const dy = t.clientY - touchStart.current.y
+          yaw.current -= dx * TOUCH_SENSITIVITY
+          pitch.current -= dy * TOUCH_SENSITIVITY
+          pitch.current = Math.max(-1.4, Math.min(1.4, pitch.current))
+          touchStart.current = { x: t.clientX, y: t.clientY }
+          break
+        }
+      }
+    }
+
+    const onTouchEnd = (e: TouchEvent) => {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === touchId.current) {
+          touchId.current = null
+          break
+        }
+      }
+    }
+
+    const canvas = gl.domElement
+    canvas.addEventListener('touchstart', onTouchStart, { passive: true })
+    canvas.addEventListener('touchmove', onTouchMove, { passive: true })
+    canvas.addEventListener('touchend', onTouchEnd, { passive: true })
+    canvas.addEventListener('touchcancel', onTouchEnd, { passive: true })
 
     return () => {
-      window.removeEventListener('deviceorientation', onDeviceOrientation)
+      canvas.removeEventListener('touchstart', onTouchStart)
+      canvas.removeEventListener('touchmove', onTouchMove)
+      canvas.removeEventListener('touchend', onTouchEnd)
+      canvas.removeEventListener('touchcancel', onTouchEnd)
     }
-  }, [isMobile])
+  }, [isMobile, enabled, gl])
 
   // Main update loop
   useFrame((_, delta) => {
     if (!enabled) return
 
-    const dt = Math.min(delta, 0.1) // Cap delta to prevent huge jumps
+    const dt = Math.min(delta, 0.1)
 
     // === MOVEMENT ===
     const canMove = isPointerLocked || isMobile
@@ -293,7 +300,7 @@ export default function FirstPersonController({
         const [jx, jy] = joystickInput.current
         if (Math.abs(jx) > 0.1 || Math.abs(jy) > 0.1) {
           dir.addScaledVector(right, jx)
-          dir.addScaledVector(forward, -jy) // -jy because forward is negative Z
+          dir.addScaledVector(forward, -jy)
         }
       }
 
@@ -306,7 +313,6 @@ export default function FirstPersonController({
         const desiredX = position.current.x + move.x
         const desiredZ = position.current.z + move.z
 
-        // Collision resolution
         const [resolvedX, resolvedZ] = resolveCollision(
           desiredX, desiredZ, walls.current, PLAYER_RADIUS
         )
@@ -320,7 +326,7 @@ export default function FirstPersonController({
         const bobAmount = sprinting ? SPRINT_BOB_AMOUNT : HEAD_BOB_AMOUNT
         position.current.y = EYE_HEIGHT + Math.sin(bobTime.current) * bobAmount
 
-        // Footstep sounds (every ~0.4s walking, ~0.3s sprinting)
+        // Footstep sounds
         const stepInterval = sprinting ? 0.3 : 0.45
         const now = performance.now() / 1000
         if (now - lastStepTime.current > stepInterval) {
@@ -329,7 +335,6 @@ export default function FirstPersonController({
         }
       } else {
         isMoving.current = false
-        // Smoothly return to eye height
         position.current.y += (EYE_HEIGHT - position.current.y) * Math.min(1, dt * 8)
       }
     }
@@ -371,7 +376,6 @@ export default function FirstPersonController({
       }
       interactTarget.current = foundTarget
 
-      // Write to shared refs for UI
       if (interactTargetRef) {
         interactTargetRef.current = foundTarget
       }

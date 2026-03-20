@@ -1,7 +1,6 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
 interface HotspotProps {
@@ -10,6 +9,8 @@ interface HotspotProps {
   size?: number
   onClick?: () => void
   label?: string
+  /** Pulse value computed by parent's useFrame (avoids per-hotspot useFrame) */
+  pulse?: number
 }
 
 export default function Hotspot({
@@ -17,24 +18,17 @@ export default function Hotspot({
   color = 0xc9a84c,
   size = 0.4,
   onClick,
+  pulse = 1,
 }: HotspotProps) {
   const ringRef = useRef<THREE.Mesh>(null)
-  const glowRef = useRef<THREE.Mesh>(null)
   const [hovered, setHovered] = useState(false)
 
-  useFrame(({ clock }) => {
-    const t = clock.getElapsedTime()
-    const pulse = 1 + Math.sin(t * 3) * 0.15
+  // Apply pulse from parent (no useFrame needed)
+  if (ringRef.current) {
+    ringRef.current.scale.setScalar(pulse)
+  }
 
-    if (ringRef.current) {
-      ringRef.current.scale.setScalar(pulse)
-      ringRef.current.rotation.z = t * 0.5
-    }
-    if (glowRef.current) {
-      const mat = glowRef.current.material as THREE.MeshBasicMaterial
-      mat.opacity = 0.15 + Math.sin(t * 3) * 0.1
-    }
-  })
+  const glowOpacity = 0.15 + (pulse - 1) * 0.67 // maps pulse [0.85..1.15] to opacity [0.05..0.25]
 
   return (
     <group position={position}>
@@ -65,9 +59,9 @@ export default function Hotspot({
       </mesh>
 
       {/* Glow sphere */}
-      <mesh ref={glowRef}>
+      <mesh>
         <sphereGeometry args={[size * 0.3, 16, 16]} />
-        <meshBasicMaterial color={color} transparent opacity={0.2} />
+        <meshBasicMaterial color={color} transparent opacity={glowOpacity} />
       </mesh>
 
       {/* Center dot */}

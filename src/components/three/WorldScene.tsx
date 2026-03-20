@@ -28,6 +28,7 @@ import AudioToggle from '../ui/AudioToggle'
 import Minimap from '../ui/Minimap'
 import ZoneProximity from '../ui/ZoneProximity'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { QualityProvider, useQuality } from '@/contexts/QualityContext'
 import type { RoomId, LightingMode } from '@/types'
 import { getContentById, getContentByZone } from '@/lib/content/sample-data'
 import { useFrame, useThree } from '@react-three/fiber'
@@ -48,7 +49,7 @@ function PlayerTracker({ posRef, yawRef }: {
   return null
 }
 
-export default function WorldScene() {
+function WorldSceneInner() {
   const [activeContent, setActiveContent] = useState<string | null>(null)
   const lightingMode: LightingMode = 'day'
   const [currentRoom, setCurrentRoom] = useState<RoomId>('main')
@@ -57,12 +58,17 @@ export default function WorldScene() {
   const [playerPos, setPlayerPos] = useState({ x: 0, z: 12 })
   const [playerYaw, setPlayerYaw] = useState(Math.PI)
   const isMobile = useIsMobile()
+  const [mobileActive, setMobileActive] = useState(false)
   const joystickInput = useRef<[number, number] | null>(null)
   const transitionTimeout = useRef<ReturnType<typeof setTimeout>>(null)
   const posRef = useRef({ x: 0, z: 12 })
   const yawRef = useRef(Math.PI)
   const interactTargetRef = useRef<string | null>(null)
   const [interactPrompt, setInteractPrompt] = useState<string | null>(null)
+  const quality = useQuality()
+
+  // UI is visible when pointer is locked (desktop) OR mobile is active
+  const uiVisible = isPointerLocked || mobileActive
 
   // Sync player position + interaction state from Three.js to React (throttled)
   useEffect(() => {
@@ -74,9 +80,16 @@ export default function WorldScene() {
     return () => clearInterval(interval)
   }, [])
 
+  // Auto-activate mobile mode on first touch
+  useEffect(() => {
+    if (!isMobile) return
+    const activate = () => { setMobileActive(true) }
+    window.addEventListener('touchstart', activate, { once: true })
+    return () => window.removeEventListener('touchstart', activate)
+  }, [isMobile])
+
   const handleHotspotClick = useCallback((contentId: string) => {
     setActiveContent(contentId)
-    // Release pointer lock when opening content
     if (document.pointerLockElement) {
       document.exitPointerLock()
     }
@@ -107,12 +120,18 @@ export default function WorldScene() {
 
   const controllerEnabled = !activeContent && !transitioning
 
+  // Canvas props based on quality tier
+  const shadows = quality !== 'low'
+  const dpr: [number, number] = quality === 'high' ? [1, 2] : quality === 'medium' ? [1, 1.5] : [0.75, 1]
+  const antialias = quality !== 'low'
+
   return (
     <div className="relative w-screen h-screen">
       <Canvas
         camera={{ fov: 65, near: 0.1, far: 100, position: [0, 1.6, 12] }}
-        shadows
-        gl={{ antialias: true, alpha: false }}
+        shadows={shadows}
+        gl={{ antialias, alpha: false }}
+        dpr={dpr}
         style={{ background: '#060606' }}
       >
         <Suspense fallback={null}>
@@ -129,12 +148,14 @@ export default function WorldScene() {
             interactTargetRef={interactTargetRef}
           />
 
-          {/* HDRI Environment for realistic reflections */}
-          <Environment
-            preset="studio"
-            background={false}
-            environmentIntensity={0.5}
-          />
+          {/* HDRI Environment for realistic reflections — skip on low tier */}
+          {quality !== 'low' && (
+            <Environment
+              preset="studio"
+              background={false}
+              environmentIntensity={quality === 'high' ? 0.5 : 0.3}
+            />
+          )}
 
           {/* === MAIN ROOM === */}
           {currentRoom === 'main' && (
@@ -216,13 +237,13 @@ export default function WorldScene() {
       {/* Room transition overlay */}
       <RoomTransition active={transitioning} />
 
-      {/* Crosshair + controls hint (visible when pointer locked) */}
+      {/* Crosshair + controls hint (visible when pointer locked OR mobile active) */}
       <Crosshair
-        visible={isPointerLocked && controllerEnabled}
+        visible={uiVisible && controllerEnabled}
         interactionPrompt={interactPrompt}
       />
 
-      {/* Click/Tap to enter prompt */}
+      {/* Click to enter prompt (desktop only, when not pointer locked) */}
       {!isPointerLocked && !activeContent && !transitioning && !isMobile && (
         <div className="fixed inset-0 z-10 flex items-center justify-center pointer-events-none">
           <div
@@ -248,6 +269,28 @@ export default function WorldScene() {
         />
       )}
 
+      {/* Mobile interact button */}
+      {isMobile && interactPrompt && controllerEnabled && (
+        <button
+          className="fixed bottom-8 right-8 z-30 px-5 py-3 text-sm uppercase tracking-widest"
+          style={{
+            fontFamily: 'var(--font-heading)',
+            color: '#c9a84c',
+            background: 'rgba(6, 6, 6, 0.85)',
+            border: '1px solid rgba(201, 168, 76, 0.5)',
+            backdropFilter: 'blur(8px)',
+            borderRadius: '8px',
+          }}
+          onClick={() => {
+            if (interactTargetRef.current) {
+              handleHotspotClick(interactTargetRef.current)
+            }
+          }}
+        >
+          Interact
+        </button>
+      )}
+
       {/* HTML overlay UI */}
       <ContentOverlay
         content={content}
@@ -256,8 +299,8 @@ export default function WorldScene() {
         onSelectItem={(id) => setActiveContent(id)}
       />
 
-      {/* Room indicator */}
-      {isPointerLocked && (
+      {/* Room indicator — visible on desktop (pointer locked) and mobile (active) */}
+      {uiVisible && (
         <div
           className="fixed top-4 left-1/2 -translate-x-1/2 z-30 px-4 py-1.5 text-xs uppercase tracking-widest"
           style={{
@@ -278,20 +321,18 @@ export default function WorldScene() {
       )}
 
       {/* Ambient audio toggle with zone-specific layers */}
-      {!isMobile && (
-        <AudioToggle
-          playerX={playerPos.x}
-          playerZ={playerPos.z}
-          currentRoom={currentRoom}
-        />
-      )}
+      <AudioToggle
+        playerX={playerPos.x}
+        playerZ={playerPos.z}
+        currentRoom={currentRoom}
+      />
 
       {/* Zone proximity indicator */}
       <ZoneProximity
         playerX={playerPos.x}
         playerZ={playerPos.z}
         currentRoom={currentRoom}
-        visible={isPointerLocked && controllerEnabled}
+        visible={uiVisible && controllerEnabled}
       />
 
       {/* Minimap */}
@@ -300,8 +341,16 @@ export default function WorldScene() {
         playerX={playerPos.x}
         playerZ={playerPos.z}
         playerYaw={playerYaw}
-        visible={isPointerLocked && controllerEnabled}
+        visible={uiVisible && controllerEnabled}
       />
     </div>
+  )
+}
+
+export default function WorldScene() {
+  return (
+    <QualityProvider>
+      <WorldSceneInner />
+    </QualityProvider>
   )
 }

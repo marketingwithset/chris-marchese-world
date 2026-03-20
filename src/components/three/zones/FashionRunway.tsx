@@ -1,5 +1,7 @@
 'use client'
 
+import { useState } from 'react'
+import { useFrame } from '@react-three/fiber'
 import Hotspot from '../objects/Hotspot'
 import NeonSign from '../objects/NeonSign'
 import { ZONES } from '@/lib/scene/zones'
@@ -14,12 +16,14 @@ function Mannequin({
   outfitColor = 0x1a1a1a,
   contentId,
   onClick,
+  pulse,
 }: {
   position: [number, number, number]
   bodyColor?: number
   outfitColor?: number
   contentId: string
   onClick: (id: string) => void
+  pulse: number
 }) {
   return (
     <group position={position}>
@@ -64,6 +68,7 @@ function Mannequin({
         onClick={() => onClick(contentId)}
         color={0xc9a84c}
         size={0.2}
+        pulse={pulse}
       />
     </group>
   )
@@ -71,6 +76,11 @@ function Mannequin({
 
 export default function FashionRunway({ onHotspotClick }: FashionRunwayProps) {
   const zone = ZONES.fashion_runway
+  const [pulse, setPulse] = useState(1)
+
+  useFrame(({ clock }) => {
+    setPulse(1 + Math.sin(clock.getElapsedTime() * 3) * 0.15)
+  })
 
   return (
     <group position={zone.position}>
@@ -117,18 +127,21 @@ export default function FashionRunway({ onHotspotClick }: FashionRunwayProps) {
         outfitColor={0x8b6914}
         contentId="fashion-1"
         onClick={onHotspotClick}
+        pulse={pulse}
       />
       <Mannequin
         position={[0, 0.2, 0]}
         outfitColor={0x1a1a1a}
         contentId="fashion-2"
         onClick={onHotspotClick}
+        pulse={pulse}
       />
       <Mannequin
         position={[0, 0.2, 3]}
         outfitColor={0x2a2a3a}
         contentId="fashion-3"
         onClick={onHotspotClick}
+        pulse={pulse}
       />
 
       {/* Backdrop at end */}

@@ -1,5 +1,7 @@
 'use client'
 
+import { useState } from 'react'
+import { useFrame } from '@react-three/fiber'
 import Hotspot from '../objects/Hotspot'
 import NeonSign from '../objects/NeonSign'
 import VideoScreen from '../objects/VideoScreen'
@@ -13,6 +15,11 @@ interface FilmStudioProps {
 export default function FilmStudio({ onHotspotClick }: FilmStudioProps) {
   const zone = ZONES.film_studio
   const darkMat = useMaterial('dark_metal')
+  const [pulse, setPulse] = useState(1)
+
+  useFrame(({ clock }) => {
+    setPulse(1 + Math.sin(clock.getElapsedTime() * 3) * 0.15)
+  })
 
   return (
     <group position={zone.position}>
@@ -32,8 +39,7 @@ export default function FilmStudio({ onHotspotClick }: FilmStudioProps) {
         color="#8a7233"
       />
 
-      {/* === VIDEO WALL \u2014 stacked monitors on left wall === */}
-      {/* Main reel \u2014 large hero screen */}
+      {/* === VIDEO WALL === */}
       <VideoScreen
         position={[-5.8, 4.5, -2]}
         rotation={[0, Math.PI / 2, 0]}
@@ -42,8 +48,6 @@ export default function FilmStudio({ onHotspotClick }: FilmStudioProps) {
         height={2.2}
         label="The Martini Shot"
       />
-
-      {/* Secondary reels \u2014 smaller screens below */}
       <VideoScreen
         position={[-5.8, 2, -3.5]}
         rotation={[0, Math.PI / 2, 0]}
@@ -71,7 +75,6 @@ export default function FilmStudio({ onHotspotClick }: FilmStudioProps) {
 
       {/* Camera on tripod */}
       <group position={[0, 0, 0]}>
-        {/* Tripod legs */}
         {[
           { pos: [-0.3, 0.8, 0.3], rot: [0.15, 0, -0.1] },
           { pos: [0.3, 0.8, 0.3], rot: [0.15, 0, 0.1] },
@@ -82,12 +85,10 @@ export default function FilmStudio({ onHotspotClick }: FilmStudioProps) {
             <meshStandardMaterial color={0x333333} metalness={0.3} roughness={0.5} />
           </mesh>
         ))}
-        {/* Camera body */}
         <mesh position={[0, 1.7, 0]}>
           <boxGeometry args={[0.8, 0.5, 0.5]} />
           <primitive object={darkMat} attach="material" />
         </mesh>
-        {/* Lens */}
         <mesh position={[0, 1.7, 0.4]} rotation={[Math.PI / 2, 0, 0]}>
           <cylinderGeometry args={[0.15, 0.12, 0.4, 16]} />
           <meshStandardMaterial color={0x111111} metalness={0.7} roughness={0.3} />
@@ -97,6 +98,7 @@ export default function FilmStudio({ onHotspotClick }: FilmStudioProps) {
           onClick={() => onHotspotClick('film-1')}
           color={0x4a7fa5}
           size={0.3}
+          pulse={pulse}
         />
       </group>
 
@@ -121,6 +123,7 @@ export default function FilmStudio({ onHotspotClick }: FilmStudioProps) {
           onClick={() => onHotspotClick('film-2')}
           color={0x4a7fa5}
           size={0.25}
+          pulse={pulse}
         />
       </group>
 
@@ -139,10 +142,11 @@ export default function FilmStudio({ onHotspotClick }: FilmStudioProps) {
           onClick={() => onHotspotClick('film-3')}
           color={0x4a7fa5}
           size={0.2}
+          pulse={pulse}
         />
       </group>
 
-      {/* Film strip accent — emissive strip instead of 5 point lights */}
+      {/* Film strip accent — emissive strip */}
       <mesh position={[-4, 7.5, 0]} rotation={[Math.PI / 2, 0, 0]}>
         <planeGeometry args={[1, 10]} />
         <meshStandardMaterial

@@ -6,6 +6,7 @@ import { Sparkles } from '@react-three/drei'
 import * as THREE from 'three'
 import NeonSign from './NeonSign'
 import { useMaterial } from '@/lib/materials/useMaterial'
+import { useQuality } from '@/contexts/QualityContext'
 
 interface PortalArchwayProps {
   position: [number, number, number]
@@ -24,6 +25,7 @@ export default function PortalArchway({
 }: PortalArchwayProps) {
   const portalPlaneRef = useRef<THREE.Mesh>(null)
   const darkMetalMat = useMaterial('dark_metal')
+  const quality = useQuality()
 
   useFrame(({ clock }) => {
     if (portalPlaneRef.current) {
@@ -36,6 +38,8 @@ export default function PortalArchway({
   const archWidth = 3
   const archHeight = 5
   const halfW = archWidth / 2
+
+  const sparkleCount = quality === 'high' ? 20 : quality === 'medium' ? 8 : 0
 
   return (
     <group position={position}>
@@ -57,21 +61,21 @@ export default function PortalArchway({
         <primitive object={darkMetalMat} attach="material" />
       </mesh>
 
-      {/* Pillar accent strips */}
+      {/* Pillar accent strips — emissive (replaces pointLight) */}
       <mesh position={[-halfW, archHeight / 2, pillarWidth / 2 + 0.01]}>
         <planeGeometry args={[0.05, archHeight]} />
-        <meshBasicMaterial color={hexColor} />
+        <meshStandardMaterial color={hexColor} emissive={hexColor} emissiveIntensity={0.8} />
       </mesh>
       <mesh position={[halfW, archHeight / 2, pillarWidth / 2 + 0.01]}>
         <planeGeometry args={[0.05, archHeight]} />
-        <meshBasicMaterial color={hexColor} />
+        <meshStandardMaterial color={hexColor} emissive={hexColor} emissiveIntensity={0.8} />
       </mesh>
       <mesh position={[0, archHeight + pillarWidth / 2, pillarWidth / 2 + 0.01]}>
         <planeGeometry args={[archWidth, 0.05]} />
-        <meshBasicMaterial color={hexColor} />
+        <meshStandardMaterial color={hexColor} emissive={hexColor} emissiveIntensity={0.8} />
       </mesh>
 
-      {/* Portal energy plane (clickable as fallback + walk-through trigger) */}
+      {/* Portal energy plane */}
       <mesh
         ref={portalPlaneRef}
         position={[0, archHeight / 2, 0]}
@@ -91,23 +95,17 @@ export default function PortalArchway({
         />
       </mesh>
 
-      {/* Sparkles inside portal */}
-      <Sparkles
-        count={20}
-        scale={[archWidth - 0.5, archHeight - 0.5, 0.5]}
-        position={[0, archHeight / 2, 0]}
-        size={1.5}
-        speed={0.6}
-        color={color}
-      />
-
-      {/* Portal light */}
-      <pointLight
-        position={[0, archHeight / 2, 1]}
-        color={hexColor}
-        intensity={1}
-        distance={6}
-      />
+      {/* Sparkles — tiered by quality */}
+      {sparkleCount > 0 && (
+        <Sparkles
+          count={sparkleCount}
+          scale={[archWidth - 0.5, archHeight - 0.5, 0.5]}
+          position={[0, archHeight / 2, 0]}
+          size={1.5}
+          speed={0.6}
+          color={color}
+        />
+      )}
 
       {/* Label above */}
       <NeonSign

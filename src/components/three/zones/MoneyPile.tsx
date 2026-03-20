@@ -1,10 +1,13 @@
 'use client'
 
+import { useState } from 'react'
+import { useFrame } from '@react-three/fiber'
 import { Sparkles } from '@react-three/drei'
 import Hotspot from '../objects/Hotspot'
 import NeonSign from '../objects/NeonSign'
 import { ZONES } from '@/lib/scene/zones'
 import { useMaterial } from '@/lib/materials/useMaterial'
+import { useQuality } from '@/contexts/QualityContext'
 
 interface MoneyPileProps {
   onHotspotClick: (contentId: string) => void
@@ -15,6 +18,14 @@ export default function MoneyPile({ onHotspotClick }: MoneyPileProps) {
   const darkMetalMat = useMaterial('dark_metal')
   const goldMat = useMaterial('gold_brushed')
   const moneyMat = useMaterial('money_green')
+  const quality = useQuality()
+  const [pulse, setPulse] = useState(1)
+
+  useFrame(({ clock }) => {
+    setPulse(1 + Math.sin(clock.getElapsedTime() * 3) * 0.15)
+  })
+
+  const sparkleCount = quality === 'high' ? 30 : quality === 'medium' ? 10 : 0
 
   return (
     <group position={zone.position}>
@@ -66,8 +77,10 @@ export default function MoneyPile({ onHotspotClick }: MoneyPileProps) {
         </mesh>
       </group>
 
-      {/* Sparkles */}
-      <Sparkles count={30} scale={[3, 2, 2]} position={[0, 2, 0]} size={2} speed={0.4} color="#c9a84c" />
+      {/* Sparkles — skip on low tier */}
+      {sparkleCount > 0 && (
+        <Sparkles count={sparkleCount} scale={[3, 2, 2]} position={[0, 2, 0]} size={2} speed={0.4} color="#c9a84c" />
+      )}
 
       {/* Hotspot */}
       <Hotspot
@@ -75,6 +88,7 @@ export default function MoneyPile({ onHotspotClick }: MoneyPileProps) {
         onClick={() => onHotspotClick('checkout-1')}
         color={0x27ae60}
         size={0.3}
+        pulse={pulse}
       />
     </group>
   )

@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import Hotspot from '../objects/Hotspot'
@@ -17,12 +17,13 @@ export default function AutomotiveDisplay({ onHotspotClick }: AutomotiveDisplayP
   const zone = ZONES.automotive
   const platformRef = useRef<THREE.Group>(null)
   const goldMat = useMaterial('gold_brushed')
-  const darkMetalMat = useMaterial('dark_metal')
+  const [pulse, setPulse] = useState(1)
 
   useFrame(({ clock }) => {
     if (platformRef.current) {
       platformRef.current.rotation.y = clock.getElapsedTime() * 0.15
     }
+    setPulse(1 + Math.sin(clock.getElapsedTime() * 3) * 0.15)
   })
 
   return (
@@ -30,8 +31,7 @@ export default function AutomotiveDisplay({ onHotspotClick }: AutomotiveDisplayP
       {/* Zone label */}
       <NeonSign text="AUTOMOTIVE" position={[0, 4, -4]} fontSize={0.5} color="#f0ead8" />
 
-      {/* Showroom spotlights — dramatic top-down and angled lights */}
-      {/* Single showroom spotlight (no extra shadow map — main directional handles it) */}
+      {/* Showroom spotlight */}
       <spotLight
         position={[0, 7, 0]}
         angle={0.6}
@@ -41,7 +41,7 @@ export default function AutomotiveDisplay({ onHotspotClick }: AutomotiveDisplayP
         target-position={[0, 0, 0]}
       />
 
-      {/* Ground reflection plane (subtle mirror effect) */}
+      {/* Ground reflection plane */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]} receiveShadow>
         <circleGeometry args={[5.5, 32]} />
         <meshStandardMaterial
@@ -53,19 +53,19 @@ export default function AutomotiveDisplay({ onHotspotClick }: AutomotiveDisplayP
 
       {/* Rotating platform */}
       <group ref={platformRef}>
-        {/* Platform base — sleek disc */}
+        {/* Platform base */}
         <mesh position={[0, 0.08, 0]} receiveShadow>
           <cylinderGeometry args={[5, 5.2, 0.16, 32]} />
           <meshStandardMaterial color={0x0d0d0d} metalness={0.5} roughness={0.3} />
         </mesh>
 
-        {/* Platform top surface (polished) */}
+        {/* Platform top surface */}
         <mesh position={[0, 0.17, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <circleGeometry args={[5, 32]} />
           <meshStandardMaterial color={0x111111} metalness={0.7} roughness={0.15} />
         </mesh>
 
-        {/* Gold edge ring (flush with platform) */}
+        {/* Gold edge ring */}
         <mesh position={[0, 0.17, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[4.9, 5.02, 32]} />
           <primitive object={goldMat} attach="material" />
@@ -77,7 +77,7 @@ export default function AutomotiveDisplay({ onHotspotClick }: AutomotiveDisplayP
           <meshStandardMaterial color={0xc9a84c} metalness={0.7} roughness={0.2} transparent opacity={0.3} />
         </mesh>
 
-        {/* Platform edge — emissive ring instead of 16 point lights */}
+        {/* Platform edge — emissive ring */}
         <mesh position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[4.85, 5.0, 32]} />
           <meshStandardMaterial
@@ -90,12 +90,13 @@ export default function AutomotiveDisplay({ onHotspotClick }: AutomotiveDisplayP
         {/* === THE CAR === */}
         <CarModel scale={1.6} />
 
-        {/* Hotspot (above car for interaction) */}
+        {/* Hotspot */}
         <Hotspot
           position={[0, 3, 0]}
           onClick={() => onHotspotClick('auto-1')}
           color={0xf0ead8}
           size={0.35}
+          pulse={pulse}
         />
       </group>
     </group>

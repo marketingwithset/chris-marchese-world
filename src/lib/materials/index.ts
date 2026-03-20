@@ -10,19 +10,16 @@
  * Specialty materials (gold, glass, tinted rooms) still use procedural
  * CanvasTexture factories since they need custom colors.
  *
- * To swap any texture: change the paths in TEXTURE_PATHS, everything
- * using that material auto-updates.
+ * Quality tiers:
+ *   - high:   Full PBR (color + normal + roughness + metalness maps)
+ *   - medium: MeshStandardMaterial with color map only (no normal/roughness)
+ *   - low:    MeshLambertMaterial with just color (skips PBR shader entirely)
  */
 import * as THREE from 'three'
+import type { QualityTier } from '@/hooks/usePerformanceTier'
 import {
   createBrushedGoldTexture,
-  createBlueTintTexture,
-  createGreenTintTexture,
-  createPlaceholderImageTexture,
 } from './textures'
-
-// Re-export for consumers that still need procedural textures
-export { createPlaceholderImageTexture }
 
 // === PBR Texture file paths (relative to /public) ===
 const TEXTURE_PATHS = {
@@ -93,7 +90,6 @@ function getCachedCanvasTexture(key: string, factory: () => THREE.CanvasTexture)
 // === Material definition types ===
 export interface MaterialDef {
   color?: string | number
-  // File-based PBR textures
   texturePaths?: {
     color?: string
     normal?: string
@@ -101,11 +97,9 @@ export interface MaterialDef {
     metalness?: string
   }
   textureRepeat?: [number, number]
-  // Procedural canvas textures (fallback)
   map?: () => THREE.CanvasTexture
   roughnessMap?: () => THREE.CanvasTexture
   normalMap?: () => THREE.CanvasTexture
-  // Standard material properties
   metalness?: number
   roughness?: number
   normalScale?: [number, number]
@@ -187,7 +181,7 @@ export const MATERIAL_DEFS: Record<string, MaterialDef> = {
     roughness: 0.95,
   },
 
-  // === METALS (real PBR textures) ===
+  // === METALS ===
   gold_brushed: {
     color: '#c9a84c',
     map: createBrushedGoldTexture,
@@ -226,6 +220,56 @@ export const MATERIAL_DEFS: Record<string, MaterialDef> = {
     metalness: 0.7,
     roughness: 0.25,
     envMapIntensity: 1.2,
+  },
+
+  // === CAR DETAIL MATERIALS (consolidated from inline) ===
+  grille_dark: {
+    color: '#080808',
+    metalness: 0.2,
+    roughness: 0.8,
+  },
+  headlight_housing: {
+    color: '#111111',
+    metalness: 0.5,
+    roughness: 0.3,
+  },
+  headlight_lens: {
+    color: '#eeeeff',
+    metalness: 0.8,
+    roughness: 0.05,
+    emissive: '#ddeeff',
+    emissiveIntensity: 0.3,
+  },
+  taillight_housing: {
+    color: '#220000',
+    metalness: 0.3,
+    roughness: 0.4,
+  },
+  diffuser_fin: {
+    color: '#1a1a1a',
+    metalness: 0.4,
+    roughness: 0.5,
+  },
+  glass_window: {
+    color: '#0a1520',
+    metalness: 0.3,
+    roughness: 0.05,
+    transparent: true,
+    opacity: 0.7,
+    side: THREE.DoubleSide,
+  },
+  mirror_glass: {
+    color: '#667788',
+    metalness: 0.9,
+    roughness: 0.05,
+  },
+  door_gap: {
+    color: '#050505',
+  },
+  underbody: {
+    color: '#080808',
+    metalness: 0.1,
+    roughness: 0.9,
   },
 
   // === FABRICS ===
@@ -295,7 +339,7 @@ export const MATERIAL_DEFS: Record<string, MaterialDef> = {
     emissiveIntensity: 0.2,
   },
 
-  // === SHARED ARCHITECTURAL ACCENTS (avoid duplicate inline materials) ===
+  // === SHARED ARCHITECTURAL ACCENTS ===
   wainscoting: {
     color: '#151515',
     metalness: 0.1,
@@ -318,11 +362,12 @@ export const MATERIAL_DEFS: Record<string, MaterialDef> = {
   },
 }
 
-// === Material cache ===
-const materialCache = new Map<string, THREE.MeshStandardMaterial>()
+// === Material cache (keyed by name + tier) ===
+const materialCache = new Map<string, THREE.Material>()
 
-export function getMaterial(name: string): THREE.MeshStandardMaterial {
-  if (materialCache.has(name)) return materialCache.get(name)!
+export function getMaterial(name: string, tier: QualityTier = 'high'): THREE.MeshStandardMaterial {
+  const cacheKey = `${name}_${tier}`
+  if (materialCache.has(cacheKey)) return materialCache.get(cacheKey) as THREE.MeshStandardMaterial
 
   const def = MATERIAL_DEFS[name]
   if (!def) {
@@ -330,6 +375,30 @@ export function getMaterial(name: string): THREE.MeshStandardMaterial {
     return new THREE.MeshStandardMaterial({ color: 0xff00ff })
   }
 
+  const isBrowser = typeof document !== 'undefined'
+
+  // LOW TIER: MeshLambertMaterial with just color — massive GPU savings
+  if (tier === 'low') {
+    const params: THREE.MeshLambertMaterialParameters = {}
+    if (def.color !== undefined) params.color = new THREE.Color(def.color)
+    if (def.transparent !== undefined) params.transparent = def.transparent
+    if (def.opacity !== undefined) params.opacity = def.opacity
+    if (def.side !== undefined) params.side = def.side
+    if (def.emissive !== undefined) params.emissive = new THREE.Color(def.emissive)
+    if (def.emissiveIntensity !== undefined) params.emissiveIntensity = def.emissiveIntensity
+
+    // Still load color map on low for textured surfaces (cheap on Lambert)
+    if (def.texturePaths?.color && isBrowser) {
+      params.map = loadTexture(def.texturePaths.color, def.textureRepeat || [1, 1])
+    }
+
+    const mat = new THREE.MeshLambertMaterial(params)
+    materialCache.set(cacheKey, mat)
+    // Cast to MeshStandardMaterial for type compat — Lambert is a subset
+    return mat as unknown as THREE.MeshStandardMaterial
+  }
+
+  // MEDIUM/HIGH TIER: MeshStandardMaterial
   const params: THREE.MeshStandardMaterialParameters = {}
 
   if (def.color !== undefined) params.color = new THREE.Color(def.color)
@@ -342,8 +411,6 @@ export function getMaterial(name: string): THREE.MeshStandardMaterial {
   if (def.emissiveIntensity !== undefined) params.emissiveIntensity = def.emissiveIntensity
   if (def.envMapIntensity !== undefined) params.envMapIntensity = def.envMapIntensity
 
-  const isBrowser = typeof document !== 'undefined'
-
   // Load file-based PBR textures
   if (def.texturePaths && isBrowser) {
     const repeat = def.textureRepeat || [1, 1]
@@ -352,17 +419,21 @@ export function getMaterial(name: string): THREE.MeshStandardMaterial {
     if (tp.color) {
       params.map = loadTexture(tp.color, repeat)
     }
-    if (tp.normal) {
-      params.normalMap = loadTexture(tp.normal, repeat, true)
-      if (def.normalScale) {
-        params.normalScale = new THREE.Vector2(def.normalScale[0], def.normalScale[1])
+
+    // Normal + roughness + metalness maps only on HIGH tier
+    if (tier === 'high') {
+      if (tp.normal) {
+        params.normalMap = loadTexture(tp.normal, repeat, true)
+        if (def.normalScale) {
+          params.normalScale = new THREE.Vector2(def.normalScale[0], def.normalScale[1])
+        }
       }
-    }
-    if (tp.roughness) {
-      params.roughnessMap = loadTexture(tp.roughness, repeat, true)
-    }
-    if (tp.metalness) {
-      params.metalnessMap = loadTexture(tp.metalness, repeat, true)
+      if (tp.roughness) {
+        params.roughnessMap = loadTexture(tp.roughness, repeat, true)
+      }
+      if (tp.metalness) {
+        params.metalnessMap = loadTexture(tp.metalness, repeat, true)
+      }
     }
   }
 
@@ -370,15 +441,15 @@ export function getMaterial(name: string): THREE.MeshStandardMaterial {
   if (def.map && isBrowser && !def.texturePaths) {
     try { params.map = getCachedCanvasTexture(`${name}_map`, def.map) } catch { /* skip */ }
   }
-  if (def.roughnessMap && isBrowser) {
+  if (def.roughnessMap && isBrowser && tier === 'high') {
     try { params.roughnessMap = getCachedCanvasTexture(`${name}_roughness`, def.roughnessMap) } catch { /* skip */ }
   }
-  if (def.normalMap && isBrowser) {
+  if (def.normalMap && isBrowser && tier === 'high') {
     try { params.normalMap = getCachedCanvasTexture(`${name}_normal`, def.normalMap) } catch { /* skip */ }
   }
 
   const mat = new THREE.MeshStandardMaterial(params)
-  materialCache.set(name, mat)
+  materialCache.set(cacheKey, mat)
   return mat
 }
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import Hotspot from '../objects/Hotspot'
@@ -14,12 +14,14 @@ interface TelephoneBoothProps {
 export default function TelephoneBooth({ onHotspotClick }: TelephoneBoothProps) {
   const zone = ZONES.telephone_booth
   const phoneGlowRef = useRef<THREE.Mesh>(null)
+  const [pulse, setPulse] = useState(1)
 
   useFrame(({ clock }) => {
     if (phoneGlowRef.current) {
       const mat = phoneGlowRef.current.material as THREE.MeshBasicMaterial
       mat.opacity = 0.3 + Math.sin(clock.getElapsedTime() * 2) * 0.2
     }
+    setPulse(1 + Math.sin(clock.getElapsedTime() * 3) * 0.15)
   })
 
   const boothColor = 0xc0392b
@@ -63,7 +65,6 @@ export default function TelephoneBooth({ onHotspotClick }: TelephoneBoothProps) 
       </mesh>
 
       {/* Glass panels (3 sides - front is open) */}
-      {/* Left */}
       <mesh position={[-boothWidth / 2 + 0.02, boothHeight / 2 + 0.1, 0]}>
         <planeGeometry args={[boothDepth - 0.2, boothHeight - 0.3]} />
         <meshStandardMaterial
@@ -73,7 +74,6 @@ export default function TelephoneBooth({ onHotspotClick }: TelephoneBoothProps) 
           side={THREE.DoubleSide}
         />
       </mesh>
-      {/* Right */}
       <mesh position={[boothWidth / 2 - 0.02, boothHeight / 2 + 0.1, 0]}>
         <planeGeometry args={[boothDepth - 0.2, boothHeight - 0.3]} />
         <meshStandardMaterial
@@ -83,7 +83,6 @@ export default function TelephoneBooth({ onHotspotClick }: TelephoneBoothProps) 
           side={THREE.DoubleSide}
         />
       </mesh>
-      {/* Back */}
       <mesh position={[0, boothHeight / 2 + 0.1, -boothDepth / 2 + 0.02]}>
         <planeGeometry args={[boothWidth - 0.2, boothHeight - 0.3]} />
         <meshStandardMaterial
@@ -96,17 +95,14 @@ export default function TelephoneBooth({ onHotspotClick }: TelephoneBoothProps) 
 
       {/* Phone on back wall */}
       <group position={[0, 1.5, -boothDepth / 2 + 0.15]}>
-        {/* Phone body */}
         <mesh>
           <boxGeometry args={[0.25, 0.35, 0.12]} />
           <meshStandardMaterial color={0x111111} metalness={0.4} roughness={0.5} />
         </mesh>
-        {/* Handset */}
         <mesh position={[0, 0.25, 0.05]}>
           <boxGeometry args={[0.06, 0.2, 0.06]} />
           <meshStandardMaterial color={0x111111} />
         </mesh>
-        {/* Phone glow */}
         <mesh ref={phoneGlowRef} position={[0, 0, 0.08]}>
           <sphereGeometry args={[0.2, 8, 8]} />
           <meshBasicMaterial color={0xc9a84c} transparent opacity={0.3} />
@@ -119,10 +115,18 @@ export default function TelephoneBooth({ onHotspotClick }: TelephoneBoothProps) 
         onClick={() => onHotspotClick('contact-1')}
         color={0xc0392b}
         size={0.3}
+        pulse={pulse}
       />
 
-      {/* Interior light */}
-      <pointLight position={[0, 2.5, 0]} color={0xfff5e6} intensity={0.5} distance={3} />
+      {/* Interior light — emissive ceiling panel instead of pointLight */}
+      <mesh position={[0, boothHeight - 0.05, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[boothWidth - 0.3, boothDepth - 0.3]} />
+        <meshStandardMaterial
+          color={0x111111}
+          emissive={0xfff5e6}
+          emissiveIntensity={0.4}
+        />
+      </mesh>
     </group>
   )
 }

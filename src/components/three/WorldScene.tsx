@@ -25,6 +25,7 @@ import RoomTransition from '../ui/RoomTransition'
 import Crosshair from '../ui/Crosshair'
 import VirtualJoystick from '../ui/VirtualJoystick'
 import AudioToggle from '../ui/AudioToggle'
+import MobileOnboarding from '../ui/MobileOnboarding'
 import Minimap from '../ui/Minimap'
 import ZoneProximity from '../ui/ZoneProximity'
 import { useIsMobile } from '@/hooks/useIsMobile'
@@ -260,6 +261,9 @@ function WorldSceneInner() {
           </div>
         </div>
       )}
+
+      {/* Mobile onboarding tooltip (first visit only) */}
+      {isMobile && mobileActive && <MobileOnboarding />}
 
       {/* Mobile virtual joystick */}
       {isMobile && controllerEnabled && (

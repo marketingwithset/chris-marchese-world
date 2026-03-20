@@ -21,36 +21,46 @@ import {
   createBrushedGoldTexture,
 } from './textures'
 
-// === PBR Texture file paths (relative to /public) ===
+// === PBR Texture file paths (relative to /public) — WebP for 86% smaller payloads ===
 const TEXTURE_PATHS = {
   concrete: {
-    color: '/textures/concrete/Concrete034_1K-JPG_Color.jpg',
-    normal: '/textures/concrete/Concrete034_1K-JPG_NormalGL.jpg',
-    roughness: '/textures/concrete/Concrete034_1K-JPG_Roughness.jpg',
+    color: '/textures/concrete/Concrete034_1K-JPG_Color.webp',
+    normal: '/textures/concrete/Concrete034_1K-JPG_NormalGL.webp',
+    roughness: '/textures/concrete/Concrete034_1K-JPG_Roughness.webp',
   },
   marble: {
-    color: '/textures/marble/Marble006_1K-JPG_Color.jpg',
-    normal: '/textures/marble/Marble006_1K-JPG_NormalGL.jpg',
-    roughness: '/textures/marble/Marble006_1K-JPG_Roughness.jpg',
+    color: '/textures/marble/Marble006_1K-JPG_Color.webp',
+    normal: '/textures/marble/Marble006_1K-JPG_NormalGL.webp',
+    roughness: '/textures/marble/Marble006_1K-JPG_Roughness.webp',
   },
   plaster: {
-    color: '/textures/plaster/Plaster003_1K-JPG_Color.jpg',
-    normal: '/textures/plaster/Plaster003_1K-JPG_NormalGL.jpg',
-    roughness: '/textures/plaster/Plaster003_1K-JPG_Roughness.jpg',
+    color: '/textures/plaster/Plaster003_1K-JPG_Color.webp',
+    normal: '/textures/plaster/Plaster003_1K-JPG_NormalGL.webp',
+    roughness: '/textures/plaster/Plaster003_1K-JPG_Roughness.webp',
   },
   brushed_metal: {
-    color: '/textures/brushed_metal/Metal032_1K-JPG_Color.jpg',
-    normal: '/textures/brushed_metal/Metal032_1K-JPG_NormalGL.jpg',
-    roughness: '/textures/brushed_metal/Metal032_1K-JPG_Roughness.jpg',
-    metalness: '/textures/brushed_metal/Metal032_1K-JPG_Metalness.jpg',
+    color: '/textures/brushed_metal/Metal032_1K-JPG_Color.webp',
+    normal: '/textures/brushed_metal/Metal032_1K-JPG_NormalGL.webp',
+    roughness: '/textures/brushed_metal/Metal032_1K-JPG_Roughness.webp',
+    metalness: '/textures/brushed_metal/Metal032_1K-JPG_Metalness.webp',
   },
   dark_metal: {
-    color: '/textures/dark_metal/Metal030_1K-JPG_Color.jpg',
-    normal: '/textures/dark_metal/Metal030_1K-JPG_NormalGL.jpg',
-    roughness: '/textures/dark_metal/Metal030_1K-JPG_Roughness.jpg',
-    metalness: '/textures/dark_metal/Metal030_1K-JPG_Metalness.jpg',
+    color: '/textures/dark_metal/Metal030_1K-JPG_Color.webp',
+    normal: '/textures/dark_metal/Metal030_1K-JPG_NormalGL.webp',
+    roughness: '/textures/dark_metal/Metal030_1K-JPG_Roughness.webp',
+    metalness: '/textures/dark_metal/Metal030_1K-JPG_Metalness.webp',
   },
 } as const
+
+// === Preload priority textures (near spawn point) ===
+// These are loaded immediately on page load for instant visual quality.
+// Spawn is at [0, 1.6, 12] facing -Z, so floor + walls are first visible.
+export const PRELOAD_TEXTURES = [
+  TEXTURE_PATHS.concrete.color,   // floor
+  TEXTURE_PATHS.plaster.color,    // walls
+  TEXTURE_PATHS.concrete.normal,  // floor detail
+  TEXTURE_PATHS.plaster.normal,   // wall detail
+] as const
 
 // === Texture loader (singleton) ===
 let _loader: THREE.TextureLoader | null = null

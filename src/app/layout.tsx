@@ -87,6 +87,9 @@ export default function RootLayout({
           rel="stylesheet"
         />
         <link rel="icon" href="/favicon.ico" sizes="any" />
+        {/* Preload spawn-area textures for instant visual quality */}
+        <link rel="preload" href="/textures/concrete/Concrete034_1K-JPG_Color.webp" as="image" type="image/webp" />
+        <link rel="preload" href="/textures/plaster/Plaster003_1K-JPG_Color.webp" as="image" type="image/webp" />
         {/* Structured data for search engines — static content, no user input */}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
       </head>

@@ -208,12 +208,10 @@ export default function FirstPersonController({
       if (!enabled) return
 
       if (thirdPerson) {
-        // Third-person: drag to orbit camera (no pointer lock needed)
-        if (mouseDragging.current) {
-          yaw.current -= e.movementX * MOUSE_SENSITIVITY
-          pitch.current -= e.movementY * MOUSE_SENSITIVITY
-          pitch.current = Math.max(-0.8, Math.min(0.8, pitch.current))
-        }
+        // Third-person: mouse always controls camera (no click/drag needed)
+        yaw.current -= e.movementX * MOUSE_SENSITIVITY
+        pitch.current -= e.movementY * MOUSE_SENSITIVITY
+        pitch.current = Math.max(-0.8, Math.min(0.8, pitch.current))
       } else {
         // First-person: requires pointer lock
         if (!document.pointerLockElement) return
@@ -238,43 +236,31 @@ export default function FirstPersonController({
       keys.current.delete(e.code)
     }
 
-    const onMouseDown = (e: MouseEvent) => {
+    const onMouseDown = () => {
+      // No longer needed for camera control in third-person
+    }
+
+    const onMouseUp = () => {
+      // No longer needed for camera control in third-person
+    }
+
+    const onClick = (e: MouseEvent) => {
       if (!enabled) return
       if (thirdPerson) {
-        // Right-click or left-click drag for camera orbit
-        mouseDragging.current = true
-        mouseDownPos.current = { x: e.clientX, y: e.clientY }
-      }
-    }
-
-    const onMouseUp = (e: MouseEvent) => {
-      if (thirdPerson && mouseDragging.current) {
-        const dx = e.clientX - mouseDownPos.current.x
-        const dy = e.clientY - mouseDownPos.current.y
-        const wasDrag = Math.abs(dx) > 5 || Math.abs(dy) > 5
-
-        mouseDragging.current = false
-
-        // If it was a click (not a drag), try to interact with clicked object
-        if (!wasDrag && enabled) {
-          const rect = canvas.getBoundingClientRect()
-          clickMouse.current.x = ((e.clientX - rect.left) / rect.width) * 2 - 1
-          clickMouse.current.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
-          clickRaycaster.current.setFromCamera(clickMouse.current, camera)
-          clickRaycaster.current.far = 50
-          const hits = clickRaycaster.current.intersectObjects(scene.children, true)
-          for (const hit of hits) {
-            if (hit.object.userData?.interactable && hit.object.userData?.contentId) {
-              onInteract(hit.object.userData.contentId)
-              break
-            }
+        // Third-person: click to interact with 3D objects via raycast
+        const rect = canvas.getBoundingClientRect()
+        clickMouse.current.x = ((e.clientX - rect.left) / rect.width) * 2 - 1
+        clickMouse.current.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
+        clickRaycaster.current.setFromCamera(clickMouse.current, camera)
+        clickRaycaster.current.far = 50
+        const hits = clickRaycaster.current.intersectObjects(scene.children, true)
+        for (const hit of hits) {
+          if (hit.object.userData?.interactable && hit.object.userData?.contentId) {
+            onInteract(hit.object.userData.contentId)
+            break
           }
         }
-      }
-    }
-
-    const onClick = () => {
-      if (!thirdPerson && !document.pointerLockElement && enabled && !isMobile) {
+      } else if (!document.pointerLockElement && !isMobile) {
         requestPointerLock()
       }
     }

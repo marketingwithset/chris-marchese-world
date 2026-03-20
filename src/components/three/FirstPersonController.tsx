@@ -174,7 +174,9 @@ export default function FirstPersonController({
 
     const spawn = SPAWN[currentRoom] || SPAWN.main
     position.current.set(...spawn.pos)
-    yaw.current = spawn.yaw
+    // In third-person, face INTO the room (yaw=0) so W moves the character forward into the space
+    // In first-person, keep original yaw (Math.PI) so player sees entrance signs first
+    yaw.current = thirdPerson ? 0 : spawn.yaw
     pitch.current = 0
     portalCooldown.current = Date.now() + PORTAL_COOLDOWN
 

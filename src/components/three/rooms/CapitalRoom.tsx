@@ -36,22 +36,30 @@ export default function CapitalRoom({ onHotspotClick, onReturn, lightingMode }: 
       <NeonSign text="SET VENTURES" position={[0, 8, -12.4]} fontSize={0.8} color="#4a7fa5" />
       <NeonSign text="CAPITAL" position={[0, 7, -12.4]} fontSize={0.5} color="#f0ead8" />
 
-      {/* === BACK WALL: Deal Origination Pipeline === */}
+      {/* === BACK WALL: Capital Raise Advisory — 4-Stage Pipeline === */}
       <group position={[0, 0, -11]}>
-        <NeonSign text="DEAL ORIGINATION" position={[0, 6, 0]} fontSize={0.4} color="#4a7fa5" />
+        <NeonSign text="CAPITAL RAISE ADVISORY" position={[0, 6, 0]} fontSize={0.35} color="#4a7fa5" />
+        <NeonSign text="Raise Capital from a Position of Strength" position={[0, 5.2, 0]} fontSize={0.18} color="#8ab4d4" />
 
-        {/* Pipeline stage bars */}
+        {/* 4-Stage pipeline */}
         {[
-          { label: 'Sourcing', width: 8, color: 0x1a3050, y: 4.5 },
-          { label: 'Evaluation', width: 6, color: 0x1a4060, y: 3.5 },
-          { label: 'Due Diligence', width: 4.5, color: 0x2a5070, y: 2.5 },
-          { label: 'Closing', width: 3, color: 0x3a6080, y: 1.5 },
+          { label: '01 · SITUATIONAL REVIEW', width: 9, color: 0x1a3050, y: 4.2 },
+          { label: '02 · STRATEGY & SCOPE', width: 7.5, color: 0x1a4060, y: 3.3 },
+          { label: '03 · BUILD MATERIALS', width: 6, color: 0x2a5070, y: 2.4 },
+          { label: '04 · GO TO MARKET', width: 4.5, color: 0x3a6080, y: 1.5 },
         ].map((stage, i) => (
           <group key={i}>
             <mesh position={[0, stage.y, 0.1]}>
-              <boxGeometry args={[stage.width, 0.6, 0.1]} />
+              <boxGeometry args={[stage.width, 0.65, 0.1]} />
               <meshStandardMaterial color={stage.color} metalness={0.3} roughness={0.5} />
             </mesh>
+            {/* Stage label (using a small neon sign) */}
+            <NeonSign
+              text={stage.label}
+              position={[0, stage.y, 0.2]}
+              fontSize={0.13}
+              color="#a0c4e0"
+            />
           </group>
         ))}
 
@@ -63,22 +71,22 @@ export default function CapitalRoom({ onHotspotClick, onReturn, lightingMode }: 
         />
       </group>
 
-      {/* === LEFT WALL: Capital Services === */}
+      {/* === LEFT WALL: Advisory Packages === */}
       <group position={[-14, 0, 0]}>
-        <NeonSign text="SERVICES" position={[0.5, 7, 0]} rotation={[0, Math.PI / 2, 0]} fontSize={0.4} color="#4a7fa5" />
+        <NeonSign text="ADVISORY PACKAGES" position={[0.5, 7, 0]} rotation={[0, Math.PI / 2, 0]} fontSize={0.35} color="#4a7fa5" />
 
-        {/* Service panels with image placeholders */}
+        {/* Package panels */}
         {[
-          { id: 'cap-svc-1', title: 'Investment Advisory', z: -3 },
-          { id: 'cap-svc-2', title: 'Private Equity', z: 0 },
-          { id: 'cap-svc-3', title: 'Strategic Capital', z: 3 },
+          { id: 'cap-svc-1', title: 'Digital Capital Launch', subtitle: '$12,500', z: -3.5 },
+          { id: 'cap-svc-2', title: 'Hybrid Media Capital', subtitle: '$15,000', z: 0 },
+          { id: 'cap-svc-3', title: 'Premium Activation', subtitle: '$20,000', z: 3.5 },
         ].map((panel) => (
           <group key={panel.id} position={[0.5, 0, panel.z]}>
             <ImageFrame
-              position={[0, 3.5, 0]}
+              position={[0, 4, 0]}
               rotation={[0, Math.PI / 2, 0]}
-              width={2.2}
-              height={3}
+              width={2.5}
+              height={3.2}
               label={panel.title}
               bgColor="#0a1520"
               textColor="#4a7fa5"
@@ -87,39 +95,68 @@ export default function CapitalRoom({ onHotspotClick, onReturn, lightingMode }: 
               interactable
               contentId={panel.id}
             />
+            <NeonSign
+              text={panel.subtitle}
+              position={[0.18, 2, panel.z > 0 ? -0.0 : 0]}
+              rotation={[0, Math.PI / 2, 0]}
+              fontSize={0.18}
+              color="#c9a84c"
+            />
           </group>
         ))}
+
+        {/* Investor origination note */}
+        <NeonSign
+          text="+ $2,000 Investor Origination Fee"
+          position={[0.5, 1.2, 0]}
+          rotation={[0, Math.PI / 2, 0]}
+          fontSize={0.12}
+          color="#8a7233"
+        />
       </group>
 
-      {/* === RIGHT WALL: Portfolio / Clients === */}
+      {/* === RIGHT WALL: Commercial Bridge Lending === */}
       <group position={[14, 0, 0]}>
-        <NeonSign text="PORTFOLIO" position={[-0.5, 7, 0]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.4} color="#4a7fa5" />
+        <NeonSign text="BRIDGE LENDING" position={[-0.5, 7, 0]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.4} color="#4a7fa5" />
+        <NeonSign text="$2MM – $25MM+" position={[-0.5, 6.2, 0]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.22} color="#c9a84c" />
 
-        {/* Client logo placeholders (3x2 grid) */}
+        {/* Loan terms display — stacked info panels */}
         {[
-          { label: 'BMW', y: 5, z: -3 },
-          { label: 'WYNN', y: 5, z: 0 },
-          { label: 'HUAWEI', y: 5, z: 3 },
-          { label: 'CLIENT 4', y: 3, z: -3 },
-          { label: 'CLIENT 5', y: 3, z: 0 },
-          { label: 'CLIENT 6', y: 3, z: 3 },
-        ].map((client, i) => (
-          <ImageFrame
-            key={i}
-            position={[-0.5, client.y, client.z]}
-            rotation={[0, -Math.PI / 2, 0]}
-            width={1.1}
-            height={1.1}
-            label={client.label}
-            bgColor="#151520"
-            textColor="#4a7fa5"
-            borderColor={0x333344}
-          />
+          { label: 'RATES', value: '9.50% – 12.50%', y: 5.2 },
+          { label: 'CLOSING', value: '2–4 Weeks', y: 4.4 },
+          { label: 'MAX LTV', value: '65%', y: 3.6 },
+          { label: 'MATURITY', value: 'Up to 2 Years', y: 2.8 },
+          { label: 'LIEN', value: '1st Position', y: 2.0 },
+          { label: 'RECOURSE', value: 'Non-Recourse (Case-by-Case)', y: 1.2 },
+        ].map((term, i) => (
+          <group key={i}>
+            {/* Background bar */}
+            <mesh position={[-0.5, term.y, 0]}>
+              <boxGeometry args={[0.12, 0.5, 5]} />
+              <meshStandardMaterial color={i % 2 === 0 ? 0x0a1520 : 0x0e1a28} metalness={0.2} roughness={0.6} />
+            </mesh>
+            <NeonSign
+              text={`${term.label}: ${term.value}`}
+              position={[-0.6, term.y, 0]}
+              rotation={[0, -Math.PI / 2, 0]}
+              fontSize={0.12}
+              color={i === 0 ? '#c9a84c' : '#a0c4e0'}
+            />
+          </group>
         ))}
+
+        {/* Markets badge */}
+        <NeonSign
+          text="Nationwide Urban & Suburban Markets"
+          position={[-0.6, 0.5, 0]}
+          rotation={[0, -Math.PI / 2, 0]}
+          fontSize={0.1}
+          color="#8a7233"
+        />
 
         <Hotspot
           position={[-0.8, 4, 0]}
-          onClick={() => onHotspotClick('cap-clients-1')}
+          onClick={() => onHotspotClick('cap-bridge-1')}
           color={0x4a7fa5}
           size={0.3}
         />
@@ -127,10 +164,12 @@ export default function CapitalRoom({ onHotspotClick, onReturn, lightingMode }: 
 
       {/* === CENTER: Vault table with gold bars === */}
       <group position={[0, 0, 0]}>
+        {/* Table base */}
         <mesh position={[0, 0.5, 0]}>
           <boxGeometry args={[3, 1, 2]} />
           <primitive object={darkMetalMat} attach="material" />
         </mesh>
+        {/* Table edge trim */}
         <mesh position={[0, 1.03, 0]}>
           <boxGeometry args={[3.1, 0.04, 2.1]} />
           <meshStandardMaterial color={0x4a7fa5} metalness={0.5} roughness={0.3} />
@@ -143,7 +182,29 @@ export default function CapitalRoom({ onHotspotClick, onReturn, lightingMode }: 
             <primitive object={goldMat} attach="material" />
           </mesh>
         ))}
+
+        {/* Founders hotspot on table */}
+        <Hotspot
+          position={[0, 1.5, 0]}
+          onClick={() => onHotspotClick('cap-founders-1')}
+          color={0xc9a84c}
+          size={0.25}
+        />
       </group>
+
+      {/* Founders nameplates flanking the table */}
+      <NeonSign text="CHRIS MARCHESE" position={[-2.5, 2, 0]} fontSize={0.12} color="#c9a84c" />
+      <NeonSign text="Founder & Advisor" position={[-2.5, 1.7, 0]} fontSize={0.08} color="#8ab4d4" />
+      <NeonSign text="TYLER FERGUSON" position={[2.5, 2, 0]} fontSize={0.12} color="#c9a84c" />
+      <NeonSign text="Founder & Advisor" position={[2.5, 1.7, 0]} fontSize={0.08} color="#8ab4d4" />
+
+      {/* Services tagline near floor */}
+      <NeonSign
+        text="Structured Capital for Value-Add & Transitional Assets"
+        position={[0, 0.3, -5]}
+        fontSize={0.15}
+        color="#4a7fa5"
+      />
 
       {/* === RETURN PORTAL === */}
       <PortalArchway

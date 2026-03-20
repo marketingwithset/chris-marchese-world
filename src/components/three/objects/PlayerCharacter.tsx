@@ -7,6 +7,7 @@ import * as THREE from 'three'
 
 const MODEL_PATH = '/models/cartoon-dog.glb'
 const SCALE = 0.8
+const Y_OFFSET = 0.45 // Raise model above the floor so it doesn't clip through
 
 // Animation parameters
 const WALK_BOB_SPEED = 10
@@ -96,7 +97,7 @@ export default function PlayerCharacter({
     const finalSquash = THREE.MathUtils.lerp(1, walkSquash, mv)
 
     // Apply to outer group (position + Y rotation set by props)
-    groupRef.current.position.set(position[0], position[1], position[2])
+    groupRef.current.position.set(position[0], position[1] + Y_OFFSET, position[2])
     groupRef.current.rotation.set(0, rotation + Math.PI, 0)
 
     // Apply procedural animation to inner group

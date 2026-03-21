@@ -211,9 +211,12 @@ export default function FirstPersonController({
       if (!thirdPerson && !document.pointerLockElement) return
 
       yaw.current -= e.movementX * MOUSE_SENSITIVITY
-      pitch.current -= e.movementY * MOUSE_SENSITIVITY
-      const maxPitch = thirdPerson ? 1.3 : 1.4
-      pitch.current = Math.max(-maxPitch, Math.min(maxPitch, pitch.current))
+      // Invert Y: mouse up = look up, mouse down = look down
+      pitch.current += e.movementY * MOUSE_SENSITIVITY
+      // First-person: clamp to prevent flipping. Third-person: full orbit (no clamp)
+      if (!thirdPerson) {
+        pitch.current = Math.max(-1.4, Math.min(1.4, pitch.current))
+      }
     }
 
     const onPointerLockChange = () => {

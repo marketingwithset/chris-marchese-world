@@ -41,10 +41,10 @@ interface FirstPersonControllerProps {
 
 // Spawn positions per room
 const SPAWN: Record<string, { pos: [number, number, number]; yaw: number }> = {
-  main: { pos: [0, 1.6, 12], yaw: Math.PI },
-  capital: { pos: [0, 1.6, 10], yaw: Math.PI },
-  infrastructure: { pos: [0, 1.6, 12], yaw: Math.PI },
-  growth: { pos: [0, 1.6, 10], yaw: Math.PI },
+  main: { pos: [0, 1.6, 42], yaw: 0 },   // South end, facing north toward sculpture
+  capital: { pos: [0, 1.6, 10], yaw: 0 },
+  infrastructure: { pos: [0, 1.6, 12], yaw: 0 },
+  growth: { pos: [0, 1.6, 10], yaw: 0 },
 }
 
 const MOVE_SPEED = 5
@@ -205,12 +205,14 @@ export default function FirstPersonController({
     const canvas = gl.domElement
 
     const onMouseMove = (e: MouseEvent) => {
-      if (!enabled || !document.pointerLockElement) return
+      if (!enabled) return
+      // Third-person: always track mouse movement (no pointer lock needed)
+      // First-person: require pointer lock
+      if (!thirdPerson && !document.pointerLockElement) return
 
       yaw.current -= e.movementX * MOUSE_SENSITIVITY
       pitch.current -= e.movementY * MOUSE_SENSITIVITY
-      // Clamp pitch: third-person is slightly more restricted to keep camera sensible
-      const maxPitch = thirdPerson ? 0.8 : 1.4
+      const maxPitch = thirdPerson ? 1.3 : 1.4
       pitch.current = Math.max(-maxPitch, Math.min(maxPitch, pitch.current))
     }
 
@@ -239,8 +241,9 @@ export default function FirstPersonController({
 
     const onClick = () => {
       if (!enabled) return
-      // Both modes: click to lock pointer for full 360° rotation
-      if (!document.pointerLockElement && !isMobile) {
+      // First-person: click to lock pointer for full rotation
+      // Third-person: no pointer lock needed — mouse always controls camera
+      if (!thirdPerson && !document.pointerLockElement && !isMobile) {
         requestPointerLock()
       }
     }
@@ -421,7 +424,7 @@ export default function FirstPersonController({
       // forward = (-sin(yaw), 0, -cos(yaw)), so "behind" = position + sin(yaw), + cos(yaw)
       const camX = position.current.x + Math.sin(yaw.current) * TP_CAM_DISTANCE
       const camZ = position.current.z + Math.cos(yaw.current) * TP_CAM_DISTANCE
-      const camY = TP_CAM_HEIGHT + Math.sin(pitch.current) * 1.5
+      const camY = TP_CAM_HEIGHT + Math.sin(pitch.current) * 3.0
       _camTarget.current.set(camX, camY, camZ)
       camera.position.lerp(_camTarget.current, TP_LERP)
       camera.lookAt(position.current.x, TP_LOOK_HEIGHT, position.current.z)

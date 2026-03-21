@@ -3,7 +3,9 @@
 import { Suspense, useState, useCallback, useRef, useMemo, useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { AdaptiveDpr, Preload, Environment } from '@react-three/drei'
-import Room from './Room'
+import Warehouse from './Warehouse'
+import CentralSculpture from './objects/CentralSculpture'
+import WarehouseAlcove from './WarehouseAlcove'
 import Lighting from './Lighting'
 import FirstPersonController from './FirstPersonController'
 import ArtGallery from './zones/ArtGallery'
@@ -57,22 +59,23 @@ function WorldSceneInner() {
   const [currentRoom, setCurrentRoom] = useState<RoomId>('main')
   const [transitioning, setTransitioning] = useState(false)
   const [isPointerLocked, setPointerLocked] = useState(false)
-  const [playerPos, setPlayerPos] = useState({ x: 0, z: 12 })
-  const [playerYaw, setPlayerYaw] = useState(Math.PI)
+  const [playerPos, setPlayerPos] = useState({ x: 0, z: 42 })
+  const [playerYaw, setPlayerYaw] = useState(0)
   const isMobile = useIsMobile()
   const [mobileActive, setMobileActive] = useState(false)
   const joystickInput = useRef<[number, number] | null>(null)
   const transitionTimeout = useRef<ReturnType<typeof setTimeout>>(null)
-  const posRef = useRef({ x: 0, z: 12 })
-  const yawRef = useRef(Math.PI)
+  const posRef = useRef({ x: 0, z: 42 })
+  const yawRef = useRef(0)
   const interactTargetRef = useRef<string | null>(null)
   const [interactPrompt, setInteractPrompt] = useState<string | null>(null)
   const quality = useQuality()
   const [thirdPerson, setThirdPerson] = useState(true)
-  const characterPosRef = useRef({ x: 0, y: 0, z: 12 })
+  const [sceneReady, setSceneReady] = useState(false)
+  const characterPosRef = useRef({ x: 0, y: 0, z: 42 })
   const movingRef = useRef(false)
   const sprintingRef = useRef(false)
-  const [charPos, setCharPos] = useState<[number, number, number]>([0, 0, 12])
+  const [charPos, setCharPos] = useState<[number, number, number]>([0, 0, 42])
   const [charMoving, setCharMoving] = useState(false)
   const [charSprinting, setCharSprinting] = useState(false)
 
@@ -94,6 +97,12 @@ function WorldSceneInner() {
     }, 100)
     return () => clearInterval(interval)
   }, [thirdPerson])
+
+  // Smooth fade-in when scene first loads
+  useEffect(() => {
+    const timer = setTimeout(() => setSceneReady(true), 300)
+    return () => clearTimeout(timer)
+  }, [])
 
   // Auto-activate mobile mode on first touch
   useEffect(() => {
@@ -141,9 +150,9 @@ function WorldSceneInner() {
   const antialias = quality !== 'low'
 
   return (
-    <div className="relative w-screen h-screen">
+    <div className="relative w-screen h-screen" style={{ opacity: sceneReady ? 1 : 0, transition: 'opacity 1.2s ease-in' }}>
       <Canvas
-        camera={{ fov: 65, near: 0.1, far: 100, position: [0, 3, 17] }}
+        camera={{ fov: 65, near: 0.1, far: 200, position: [0, 3, 47] }}
         shadows={shadows}
         gl={{ antialias, alpha: false }}
         dpr={dpr}
@@ -176,45 +185,60 @@ function WorldSceneInner() {
             />
           )}
 
-          {/* === MAIN ROOM === */}
+          {/* === MAIN WAREHOUSE === */}
           {currentRoom === 'main' && (
             <>
               <Lighting mode={lightingMode} />
-              <Room />
+              <Warehouse />
+              <CentralSculpture />
 
-              <ArtGallery onHotspotClick={handleHotspotClick} />
-              <FilmStudio onHotspotClick={handleHotspotClick} />
-              <AutomotiveDisplay onHotspotClick={handleHotspotClick} />
-              <FashionRunway onHotspotClick={handleHotspotClick} />
-              <TelephoneBooth onHotspotClick={handleHotspotClick} />
-              <MoneyPile onHotspotClick={handleHotspotClick} />
+              {/* Entrance signage */}
+              <NeonSign text="MARCHESE" position={[0, 12, 49]} rotation={[0, Math.PI, 0]} fontSize={1.5} color="#c9a84c" />
+              <NeonSign text="ENTER THE WORLD" position={[0, 9.5, 49]} rotation={[0, Math.PI, 0]} fontSize={0.4} color="#f0ead8" />
+              <NeonSign text="SETTING THE PACE" position={[0, 1.5, -49]} fontSize={0.4} color="#8a7233" />
 
-              {/* Portal zones */}
-              <PortalCapital onEnter={() => handleEnterRoom('capital')} />
-              <PortalInfrastructure onEnter={() => handleEnterRoom('infrastructure')} />
-              <PortalGrowth onEnter={() => handleEnterRoom('growth')} />
+              {/* === SUB-ROOM ALCOVES === */}
 
-              {/* Environmental text */}
-              <NeonSign
-                text="MARCHESE"
-                position={[0, 6.5, 14.8]}
-                rotation={[0, Math.PI, 0]}
-                fontSize={1.2}
-                color="#c9a84c"
-              />
-              <NeonSign
-                text="SETTING THE PACE"
-                position={[0, 1.5, -14.8]}
-                fontSize={0.35}
-                color="#8a7233"
-              />
-              <NeonSign
-                text="ENTER THE WORLD"
-                position={[0, 3, 14.8]}
-                rotation={[0, Math.PI, 0]}
-                fontSize={0.3}
-                color="#f0ead8"
-              />
+              {/* Art Gallery — North (0°) */}
+              <WarehouseAlcove position={[0, 0, -35]} rotation={0} width={30} depth={20} height={12} accentColor="#c9a84c" accentHex={0xc9a84c} label="ART GALLERY">
+                <ArtGallery onHotspotClick={handleHotspotClick} />
+              </WarehouseAlcove>
+
+              {/* Film Studio — Northeast (60°) */}
+              <WarehouseAlcove position={[30, 0, -17]} rotation={-Math.PI / 3} width={20} depth={16} height={10} accentColor="#4a7fa5" accentHex={0x4a7fa5} label="FILM STUDIO">
+                <FilmStudio onHotspotClick={handleHotspotClick} />
+              </WarehouseAlcove>
+
+              {/* Fashion — Southeast (120°) */}
+              <WarehouseAlcove position={[30, 0, 17]} rotation={(-2 * Math.PI) / 3} width={20} depth={18} height={10} accentColor="#f0ead8" accentHex={0xf0ead8} label="FASHION">
+                <FashionRunway onHotspotClick={handleHotspotClick} />
+              </WarehouseAlcove>
+
+              {/* Automotive — South (180°) */}
+              <WarehouseAlcove position={[0, 0, 35]} rotation={Math.PI} width={24} depth={20} height={10} accentColor="#1a1a1a" accentHex={0x333333} label="AUTOMOTIVE">
+                <AutomotiveDisplay onHotspotClick={handleHotspotClick} />
+              </WarehouseAlcove>
+
+              {/* Telephone — Southwest (240°) */}
+              <WarehouseAlcove position={[-30, 0, 17]} rotation={(2 * Math.PI) / 3} width={14} depth={12} height={10} accentColor="#c0392b" accentHex={0xc0392b} label="CONTACT">
+                <TelephoneBooth onHotspotClick={handleHotspotClick} />
+              </WarehouseAlcove>
+
+              {/* Money/Checkout — Northwest (300°) */}
+              <WarehouseAlcove position={[-30, 0, -17]} rotation={Math.PI / 3} width={14} depth={12} height={10} accentColor="#27ae60" accentHex={0x27ae60} label="CHECKOUT">
+                <MoneyPile onHotspotClick={handleHotspotClick} />
+              </WarehouseAlcove>
+
+              {/* Portal zones — on warehouse perimeter */}
+              <group position={[-45, 0, 0]}>
+                <PortalCapital onEnter={() => handleEnterRoom('capital')} />
+              </group>
+              <group position={[45, 0, 0]}>
+                <PortalInfrastructure onEnter={() => handleEnterRoom('infrastructure')} />
+              </group>
+              <group position={[0, 0, -45]}>
+                <PortalGrowth onEnter={() => handleEnterRoom('growth')} />
+              </group>
             </>
           )}
 

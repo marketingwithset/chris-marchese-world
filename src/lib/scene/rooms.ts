@@ -3,10 +3,10 @@ import type { RoomConfig } from '@/types'
 export const ROOMS: Record<string, RoomConfig> = {
   main: {
     id: 'main',
-    name: 'Main Gallery',
-    width: 40,
-    depth: 30,
-    height: 8,
+    name: 'Marchese Warehouse',
+    width: 100,
+    depth: 100,
+    height: 18,
     floorColor: 0x0a0a0a,
     wallColor: 0x121212,
     ceilingColor: 0x080808,

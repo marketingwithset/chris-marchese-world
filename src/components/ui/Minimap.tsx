@@ -12,24 +12,25 @@ interface MinimapProps {
 }
 
 // Zone positions in main room (approximate centers, scaled to minimap)
+// Zone positions in warehouse (hexagonal layout, normalized 0-1 on minimap)
 const MAIN_ZONES = [
-  { id: 'art', label: 'ART', x: 0.75, z: 0.25, color: '#c9a84c' },
-  { id: 'film', label: 'FILM', x: 0.12, z: 0.5, color: '#4a7fa5' },
-  { id: 'auto', label: 'AUTO', x: 0.75, z: 0.75, color: '#c9a84c' },
-  { id: 'fashion', label: 'FASHION', x: 0.25, z: 0.8, color: '#c9a84c' },
-  { id: 'phone', label: 'CONTACT', x: 0.88, z: 0.5, color: '#c0392b' },
-  { id: 'money', label: 'SHOP', x: 0.5, z: 0.75, color: '#c9a84c' },
+  { id: 'art', label: 'ART', x: 0.5, z: 0.15, color: '#c9a84c' },
+  { id: 'film', label: 'FILM', x: 0.8, z: 0.33, color: '#4a7fa5' },
+  { id: 'fashion', label: 'FASHION', x: 0.8, z: 0.67, color: '#f0ead8' },
+  { id: 'auto', label: 'AUTO', x: 0.5, z: 0.85, color: '#666666' },
+  { id: 'phone', label: 'CONTACT', x: 0.2, z: 0.67, color: '#c0392b' },
+  { id: 'money', label: 'SHOP', x: 0.2, z: 0.33, color: '#27ae60' },
 ]
 
 const PORTALS = [
-  { id: 'capital', label: 'CAP', x: 0.2, z: 0.15, color: '#4a7fa5' },
-  { id: 'infra', label: 'INFRA', x: 0.5, z: 0.08, color: '#c9a84c' },
-  { id: 'growth', label: 'GROWTH', x: 0.8, z: 0.15, color: '#5a9e6f' },
+  { id: 'capital', label: 'CAP', x: 0.05, z: 0.5, color: '#4a7fa5' },
+  { id: 'infra', label: 'INFRA', x: 0.95, z: 0.5, color: '#c9a84c' },
+  { id: 'growth', label: 'GROWTH', x: 0.5, z: 0.05, color: '#5a9e6f' },
 ]
 
 // Room dimensions for coordinate mapping
 const ROOM_DIMS: Record<string, { w: number; d: number }> = {
-  main: { w: 40, d: 30 },
+  main: { w: 100, d: 100 },
   capital: { w: 30, d: 25 },
   infrastructure: { w: 35, d: 30 },
   growth: { w: 30, d: 25 },

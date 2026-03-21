@@ -195,30 +195,23 @@ export default function FirstPersonController({
   const clickRaycaster = useRef(new THREE.Raycaster())
   const clickMouse = useRef(new THREE.Vector2())
 
-  // Pointer lock handlers (desktop)
+  // Pointer lock handlers (desktop) — used for both first-person AND third-person
   const requestPointerLock = useCallback(() => {
-    if (!enabled || thirdPerson) return
+    if (!enabled) return
     gl.domElement.requestPointerLock()
-  }, [gl, enabled, thirdPerson])
+  }, [gl, enabled])
 
   useEffect(() => {
     const canvas = gl.domElement
 
     const onMouseMove = (e: MouseEvent) => {
-      if (!enabled) return
+      if (!enabled || !document.pointerLockElement) return
 
-      if (thirdPerson) {
-        // Third-person: mouse always controls camera (no click/drag needed)
-        yaw.current -= e.movementX * MOUSE_SENSITIVITY
-        pitch.current -= e.movementY * MOUSE_SENSITIVITY
-        pitch.current = Math.max(-0.8, Math.min(0.8, pitch.current))
-      } else {
-        // First-person: requires pointer lock
-        if (!document.pointerLockElement) return
-        yaw.current -= e.movementX * MOUSE_SENSITIVITY
-        pitch.current -= e.movementY * MOUSE_SENSITIVITY
-        pitch.current = Math.max(-1.4, Math.min(1.4, pitch.current))
-      }
+      yaw.current -= e.movementX * MOUSE_SENSITIVITY
+      pitch.current -= e.movementY * MOUSE_SENSITIVITY
+      // Clamp pitch: third-person is slightly more restricted to keep camera sensible
+      const maxPitch = thirdPerson ? 0.8 : 1.4
+      pitch.current = Math.max(-maxPitch, Math.min(maxPitch, pitch.current))
     }
 
     const onPointerLockChange = () => {
@@ -244,23 +237,10 @@ export default function FirstPersonController({
       // No longer needed for camera control in third-person
     }
 
-    const onClick = (e: MouseEvent) => {
+    const onClick = () => {
       if (!enabled) return
-      if (thirdPerson) {
-        // Third-person: click to interact with 3D objects via raycast
-        const rect = canvas.getBoundingClientRect()
-        clickMouse.current.x = ((e.clientX - rect.left) / rect.width) * 2 - 1
-        clickMouse.current.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
-        clickRaycaster.current.setFromCamera(clickMouse.current, camera)
-        clickRaycaster.current.far = 50
-        const hits = clickRaycaster.current.intersectObjects(scene.children, true)
-        for (const hit of hits) {
-          if (hit.object.userData?.interactable && hit.object.userData?.contentId) {
-            onInteract(hit.object.userData.contentId)
-            break
-          }
-        }
-      } else if (!document.pointerLockElement && !isMobile) {
+      // Both modes: click to lock pointer for full 360° rotation
+      if (!document.pointerLockElement && !isMobile) {
         requestPointerLock()
       }
     }

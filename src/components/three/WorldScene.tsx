@@ -273,7 +273,7 @@ function WorldSceneInner() {
       />
 
       {/* Click to enter prompt (desktop only, when not pointer locked) */}
-      {!isPointerLocked && !activeContent && !transitioning && !isMobile && !thirdPerson && (
+      {!isPointerLocked && !activeContent && !transitioning && !isMobile && (
         <div className="fixed inset-0 z-10 flex items-center justify-center pointer-events-none">
           <div
             className="px-6 py-3 text-sm uppercase tracking-widest animate-pulse"

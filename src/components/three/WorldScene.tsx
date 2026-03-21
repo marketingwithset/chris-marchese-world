@@ -200,33 +200,46 @@ function WorldSceneInner() {
               {/* === SUB-ROOM ALCOVES === */}
 
               {/* Art Gallery — North (0°) */}
+              {/* Each zone component internally offsets by zone.position, so we counter-offset here */}
               <WarehouseAlcove position={[0, 0, -35]} rotation={0} width={30} depth={20} height={12} accentColor="#c9a84c" accentHex={0xc9a84c} label="ART GALLERY">
-                <ArtGallery onHotspotClick={handleHotspotClick} />
+                <group position={[0, 0, 35]}>
+                  <ArtGallery onHotspotClick={handleHotspotClick} />
+                </group>
               </WarehouseAlcove>
 
               {/* Film Studio — Northeast (60°) */}
               <WarehouseAlcove position={[30, 0, -17]} rotation={-Math.PI / 3} width={20} depth={16} height={10} accentColor="#4a7fa5" accentHex={0x4a7fa5} label="FILM STUDIO">
-                <FilmStudio onHotspotClick={handleHotspotClick} />
+                <group position={[-30, 0, 17]}>
+                  <FilmStudio onHotspotClick={handleHotspotClick} />
+                </group>
               </WarehouseAlcove>
 
               {/* Fashion — Southeast (120°) */}
               <WarehouseAlcove position={[30, 0, 17]} rotation={(-2 * Math.PI) / 3} width={20} depth={18} height={10} accentColor="#f0ead8" accentHex={0xf0ead8} label="FASHION">
-                <FashionRunway onHotspotClick={handleHotspotClick} />
+                <group position={[-30, 0, -17]}>
+                  <FashionRunway onHotspotClick={handleHotspotClick} />
+                </group>
               </WarehouseAlcove>
 
               {/* Automotive — South (180°) */}
               <WarehouseAlcove position={[0, 0, 35]} rotation={Math.PI} width={24} depth={20} height={10} accentColor="#1a1a1a" accentHex={0x333333} label="AUTOMOTIVE">
-                <AutomotiveDisplay onHotspotClick={handleHotspotClick} />
+                <group position={[0, 0, -35]}>
+                  <AutomotiveDisplay onHotspotClick={handleHotspotClick} />
+                </group>
               </WarehouseAlcove>
 
               {/* Telephone — Southwest (240°) */}
               <WarehouseAlcove position={[-30, 0, 17]} rotation={(2 * Math.PI) / 3} width={14} depth={12} height={10} accentColor="#c0392b" accentHex={0xc0392b} label="CONTACT">
-                <TelephoneBooth onHotspotClick={handleHotspotClick} />
+                <group position={[30, 0, -17]}>
+                  <TelephoneBooth onHotspotClick={handleHotspotClick} />
+                </group>
               </WarehouseAlcove>
 
               {/* Money/Checkout — Northwest (300°) */}
               <WarehouseAlcove position={[-30, 0, -17]} rotation={Math.PI / 3} width={14} depth={12} height={10} accentColor="#27ae60" accentHex={0x27ae60} label="CHECKOUT">
-                <MoneyPile onHotspotClick={handleHotspotClick} />
+                <group position={[30, 0, 17]}>
+                  <MoneyPile onHotspotClick={handleHotspotClick} />
+                </group>
               </WarehouseAlcove>
 
               {/* Portal zones — on warehouse perimeter */}

@@ -6,8 +6,8 @@ import { ROOMS } from '@/lib/scene/rooms'
 import * as THREE from 'three'
 
 /**
- * Massive warehouse shell (100×100×18) replacing the old Room.tsx gallery.
- * Industrial aesthetic: exposed concrete, steel I-beams, no crown molding.
+ * Museum atrium (100×100×18). Contemporary art gallery aesthetic:
+ * polished dark floors, clean walls, elegant marble pillars, warm lighting.
  */
 export default function Warehouse() {
   const config = ROOMS.main
@@ -15,50 +15,52 @@ export default function Warehouse() {
   const hd = config.depth / 2    // 50
   const h = config.height        // 18
 
-  const concreteMat = useMaterial('floor_concrete')
+  const marbleMat = useMaterial('floor_marble')
   const wallMat = useMaterial('wall_plaster')
 
-  // Dark industrial materials
-  const ceilingMat = useMemo(
-    () => new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.9, metalness: 0.1 }),
+  // Polished dark floor
+  const floorMat = useMemo(
+    () => new THREE.MeshStandardMaterial({ color: 0x0c0c0c, roughness: 0.15, metalness: 0.3 }),
     []
   )
-  const beamMat = useMemo(
-    () => new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.4, metalness: 0.7 }),
+  // Museum ceiling — dark, clean
+  const ceilingMat = useMemo(
+    () => new THREE.MeshStandardMaterial({ color: 0x080808, roughness: 0.9, metalness: 0.05 }),
+    []
+  )
+  // Elegant pillar material — dark marble tone
+  const pillarMat = useMemo(
+    () => new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.25, metalness: 0.4 }),
+    []
+  )
+  // Gold accent trim
+  const goldTrimMat = useMemo(
+    () => new THREE.MeshStandardMaterial({
+      color: 0xc9a84c, emissive: 0xc9a84c, emissiveIntensity: 0.2,
+      roughness: 0.3, metalness: 0.7,
+    }),
     []
   )
 
-  // Generate I-beam column positions (grid every 25 units, skip center area)
-  const beamPositions = useMemo(() => {
+  // Elegant pillar positions — fewer, larger, with gold trim
+  const pillarPositions = useMemo(() => {
     const positions: [number, number][] = []
-    for (let x = -37.5; x <= 37.5; x += 25) {
-      for (let z = -37.5; z <= 37.5; z += 25) {
-        // Skip center area (sculpture zone) and areas too close to walls
-        if (Math.abs(x) < 8 && Math.abs(z) < 8) continue
-        positions.push([x, z])
-      }
+    // Ring of pillars around center at radius ~20
+    for (let angle = 0; angle < 360; angle += 30) {
+      const rad = (angle * Math.PI) / 180
+      const x = Math.cos(rad) * 22
+      const z = Math.sin(rad) * 22
+      positions.push([x, z])
     }
     return positions
   }, [])
 
-  // Ceiling beam positions (long horizontal beams)
-  const ceilingBeams = useMemo(() => {
-    const beams: { x: number; z: number; len: number; axis: 'x' | 'z' }[] = []
-    for (let z = -37.5; z <= 37.5; z += 25) {
-      beams.push({ x: 0, z, len: 100, axis: 'x' })
-    }
-    for (let x = -37.5; x <= 37.5; x += 25) {
-      beams.push({ x, z: 0, len: 100, axis: 'z' })
-    }
-    return beams
-  }, [])
-
   return (
     <group>
-      {/* Floor */}
+      {/* Polished floor */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
         <planeGeometry args={[config.width, config.depth]} />
-        <primitive object={concreteMat} attach="material" />
+        <primitive object={floorMat} attach="material" />
       </mesh>
 
       {/* Ceiling */}
@@ -68,75 +70,80 @@ export default function Warehouse() {
       </mesh>
 
       {/* Walls */}
-      {/* Back wall (North) */}
       <mesh position={[0, h / 2, -hd]}>
         <planeGeometry args={[config.width, h]} />
         <primitive object={wallMat} attach="material" />
       </mesh>
-
-      {/* Front wall (South) — with entrance gap */}
-      <mesh position={[-30, h / 2, hd]} rotation={[0, Math.PI, 0]}>
-        <planeGeometry args={[40, h]} />
+      {/* South wall with entrance gap (20 units wide) */}
+      <mesh position={[-35, h / 2, hd]} rotation={[0, Math.PI, 0]}>
+        <planeGeometry args={[30, h]} />
         <primitive object={wallMat} attach="material" />
       </mesh>
-      <mesh position={[30, h / 2, hd]} rotation={[0, Math.PI, 0]}>
-        <planeGeometry args={[40, h]} />
+      <mesh position={[35, h / 2, hd]} rotation={[0, Math.PI, 0]}>
+        <planeGeometry args={[30, h]} />
         <primitive object={wallMat} attach="material" />
       </mesh>
-
-      {/* Left wall (West) */}
       <mesh position={[-hw, h / 2, 0]} rotation={[0, Math.PI / 2, 0]}>
         <planeGeometry args={[config.depth, h]} />
         <primitive object={wallMat} attach="material" />
       </mesh>
-
-      {/* Right wall (East) */}
       <mesh position={[hw, h / 2, 0]} rotation={[0, -Math.PI / 2, 0]}>
         <planeGeometry args={[config.depth, h]} />
         <primitive object={wallMat} attach="material" />
       </mesh>
 
-      {/* I-beam columns — vertical pillars */}
-      {beamPositions.map(([x, z], i) => (
-        <group key={`col-${i}`} position={[x, 0, z]}>
-          {/* Vertical beam */}
+      {/* Elegant cylindrical pillars in a ring around center */}
+      {pillarPositions.map(([x, z], i) => (
+        <group key={`pillar-${i}`} position={[x, 0, z]}>
+          {/* Pillar shaft */}
           <mesh position={[0, h / 2, 0]}>
-            <boxGeometry args={[0.6, h, 0.6]} />
-            <primitive object={beamMat} attach="material" />
+            <cylinderGeometry args={[0.4, 0.5, h, 16]} />
+            <primitive object={pillarMat} attach="material" />
           </mesh>
-          {/* Base plate */}
-          <mesh position={[0, 0.05, 0]}>
-            <boxGeometry args={[1.2, 0.1, 1.2]} />
-            <primitive object={beamMat} attach="material" />
+          {/* Gold base ring */}
+          <mesh position={[0, 0.1, 0]}>
+            <cylinderGeometry args={[0.7, 0.7, 0.2, 16]} />
+            <primitive object={goldTrimMat} attach="material" />
+          </mesh>
+          {/* Gold capital (top ring) */}
+          <mesh position={[0, h - 0.1, 0]}>
+            <cylinderGeometry args={[0.6, 0.4, 0.2, 16]} />
+            <primitive object={goldTrimMat} attach="material" />
           </mesh>
         </group>
       ))}
 
-      {/* Ceiling beams — horizontal trusses */}
-      {ceilingBeams.map((beam, i) => (
-        <mesh
-          key={`cbeam-${i}`}
-          position={[beam.x, h - 0.3, beam.z]}
-        >
-          <boxGeometry
-            args={beam.axis === 'x' ? [beam.len, 0.5, 0.4] : [0.4, 0.5, beam.len]}
-          />
-          <primitive object={beamMat} attach="material" />
+      {/* Floor baseboard trim — gold accent along walls */}
+      {[
+        { pos: [0, 0.06, -hd + 0.05] as const, args: [config.width, 0.12, 0.1] as const },
+        { pos: [-hw + 0.05, 0.06, 0] as const, args: [0.1, 0.12, config.depth] as const },
+        { pos: [hw - 0.05, 0.06, 0] as const, args: [0.1, 0.12, config.depth] as const },
+      ].map((trim, i) => (
+        <mesh key={`trim-${i}`} position={trim.pos}>
+          <boxGeometry args={trim.args} />
+          <primitive object={goldTrimMat} attach="material" />
         </mesh>
       ))}
 
-      {/* Floor grid lines — subtle gold accent at key intersections */}
-      {[-25, 0, 25].map((x) =>
-        [-25, 0, 25].map((z) => (
-          <mesh key={`fgrid-${x}-${z}`} position={[x, 0.01, z]} rotation={[-Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[0.8, 1, 32]} />
-            <meshStandardMaterial color={0xc9a84c} emissive={0xc9a84c} emissiveIntensity={0.3} transparent opacity={0.15} />
+      {/* Corridor floor accent strips — subtle gold lines from center to each alcove */}
+      {[0, 60, 120, 180, 240, 300].map((angle) => {
+        const rad = (angle * Math.PI) / 180
+        const midR = 20
+        const x = Math.cos(rad) * midR
+        const z = Math.sin(rad) * midR
+        return (
+          <mesh key={`corridor-${angle}`} position={[x, 0.02, z]} rotation={[-Math.PI / 2, 0, rad + Math.PI / 2]}>
+            <planeGeometry args={[0.3, 25]} />
+            <meshStandardMaterial color={0xc9a84c} emissive={0xc9a84c} emissiveIntensity={0.3} transparent opacity={0.12} />
           </mesh>
-        ))
-      )}
+        )
+      })}
 
-      {/* Fog for atmospheric depth culling */}
-      <fog attach="fog" args={['#060606', 35, 90]} />
+      {/* Ambient museum lighting — warm, soft */}
+      <ambientLight intensity={0.15} color={0xfff5e6} />
+
+      {/* Fog for atmospheric depth */}
+      <fog attach="fog" args={['#060606', 40, 95]} />
     </group>
   )
 }
